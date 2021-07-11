@@ -1,5 +1,3 @@
-const x = 123;
-
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
@@ -9,14 +7,14 @@ const config = {
     mode: "development",
     devtool: "cheap-module-source-map",
     entry: {
-        app: path.join(__dirname, "./static/index.js"),
+        app: path.join(__dirname, "static", "index.js"),
     },
     output: {
-        path: path.resolve(__dirname, "./build"),
+        path: path.resolve(__dirname, "build"),
         filename: "[name].js",
     },
     resolve: {
-        extensions: ["*", ".js"],
+        extensions: ["", "*", ".js"],
     },
     plugins: [
         new HtmlWebpackPlugin({
@@ -50,7 +48,15 @@ const config = {
             {
                 test: /\.js$/,
                 exclude: /node_modules/,
-                use: ["babel-loader"],
+                use: {
+                    loader: "babel-loader",
+                    options: {
+                        presets: [
+                            "@babel/preset-env",
+                            "@babel/preset-react",
+                        ],
+                    },
+                },
             },
             {
                 test: /\.css$/,

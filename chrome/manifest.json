@@ -13,5 +13,5 @@
         "default_title": "Chrome Extension Boilerplate",
         "default_popup": "index.html"
     },
-    "permissions": []
+    "permissions": ["activeTab", "<all_urls>"]
 }

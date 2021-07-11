@@ -6,19 +6,24 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "set NODE_ENV='development'&&webpack --mode development --config webpack.config.js",
-    "watch": "set NODE_ENV='development'&&webpack --mode development --config webpack.config.js --watch"
+    "watch": "set NODE_ENV='development'&&webpack --mode development --config webpack.config.js --watch",
+    "dbuild": "rm -r build"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "axios": "^0.21.1",
     "bootstrap": "^5.0.2",
+    "dom-to-image": "^2.6.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2"
   },
   "devDependencies": {
     "@babel/core": "^7.14.6",
     "@babel/preset-env": "^7.14.7",
+    "@babel/preset-es2015": "^7.0.0-beta.53",
     "@babel/preset-react": "^7.14.5",
+    "@babel/preset-stage-0": "^7.8.3",
     "babel-loader": "^8.2.2",
     "copy-webpack-plugin": "^9.0.1",
     "css-loader": "^5.2.6",
