@@ -1,18 +1,16 @@
 import domtoimage from "dom-to-image";
 import { messages } from "@extend-chrome/messages";
 
-messages.send({
-    greeting: "greeting from content-script.js",
-    data: "custom data before async",
-});
+// messages.send({
+//     greeting: "greeting from content-script.js",
+//     data: "custom data before async",
+// });
 
-messages.on((message, sender, sendResponse) => {
-    if(message.greeting !== 'greeting from app.js') return;
+// messages.on((message, sender, sendResponse) => {
+//     if(message.greeting !== 'greeting from app.js') return;
 
-    main();
-})
-
-new Promise((r) => setTimeout(r, 3000));
+//     main();
+// })
 
 
 async function main() {
@@ -48,5 +46,7 @@ async function main() {
         data: dataUrl.substring(0, 50),
     });
 }
+
+// main();
 
 
