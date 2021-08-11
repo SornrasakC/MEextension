@@ -1,11 +1,28 @@
-import React, { useEffect, useState, useReducer, useRef } from "react";
+import React, { useEffect, useState, useReducer } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
-import withDOM, { withDOMGen, getTargetDOM } from "./utils/access";
-import { unpackReducer } from "./utils/utils";
+import withDom, { withDomGen, useTargetDom, runContentScript } from "./utils/chrome/access";
+import { unpackReducer, timeout } from "./utils/utils";
+
+import { messages } from "@extend-chrome/messages";
 
 import domtoimage from "dom-to-image";
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
 
 export default function App() {
+    // const [targetDom, fetchTargetDom, isTargetDomReady] = useTargetDom();
+
+    messages.on((message, sender, sendResponse) => {
+        if (message.greeting != "greeting from content-script.js") return;
+
+        console.log("========================================");
+        console.log(sender.id, "said hello");
+        console.log("message:", message);
+        console.log("========================================");
+
+        // sendResponse({ farewell: "goodbye" });
+    });
+
     const [meta, setMeta] = useReducer(unpackReducer, {
         chapter: 0,
         title: "KoibitoMuriMuri",
@@ -16,58 +33,24 @@ export default function App() {
         setMeta({ filenamePrefix: `${meta.title} Ch.${meta.chapter}` });
     }, [meta.chapter, meta.title]);
 
+    // useEffect(() => {
+    //     while (!isTargetDomReady);
+    //     const chapter = targetDom.getElementsByClassName("episode_title")[0].textContent.match(/\d+/)[0];
+    //     setMeta({ chapter });
+    // }, []);
+
     const [pageRanges, setPageRanges] = useReducer(unpackReducer, {
         startPage: 0,
         endPage: 60,
     });
 
-    const [res, setRes] = useState(0);
-    useEffect(() => {
-        console.log('========================================')
-        console.log('RES EFFECT')
-        console.log('res:', res)
-        console.log('========================================')
-        
-    }, [res])
+    const mainTest = async () => {
 
-    const entry = async () => {
-        const dom2Res = _withDOM2(setRes, () => {
-            return 44444444;
-        })
-
-        console.log('========================================')
-        console.log('dom2Res:', dom2Res)
-        console.log('========================================')
-        
-
-        const nodeText = await _withDOM(() => {
-            return 123123123;
-            return document.getElementsByClassName("episode_title")[0].innerText;
+        runContentScript();
+        messages.send({
+            greeting: "greeting from app.js",
+            data: "",
         });
-        console.log('========================================')
-        console.log('nodeText:', nodeText)
-        console.log('========================================')
-        
-        // console.log('========================================')
-        // console.log('node.textContent.match(/\d+/)[0]:', node.textContent.match(/\d+/)[0])
-        // console.log('========================================')
-
-        const targetDOM = await getTargetDOM();
-
-        console.log('========================================')
-        console.log('targetDOM:', targetDOM)
-        console.log('========================================')
-
-        console.log('========================================')
-        console.log('targetDom.getElementsByClassName("episode_title")[0]:', targetDom.getElementsByClassName("episode_title")[0])
-        console.log('========================================')
-        
-        
-        // const chapter = document.getElementsByClassName("episode_title")[0].textContent.match(/\d+/)[0];
-
-        // console.log("========================================");
-        // console.log("chapter:", chapter);
-        // console.log("========================================");
     };
 
     return (
@@ -75,24 +58,24 @@ export default function App() {
             <div className="container">
                 <h1>MEextention</h1>
 
+                <div className="m-3 p-3">isTargetReady: {isTargetDomReady + ""}</div>
+
                 <button
                     className="m-3 p-3"
                     onClick={() => {
-                        entry();
+                        mainTest();
                     }}
                 >
-                    Test
+                    MainTest
                 </button>
 
                 <button
                     className="m-3 p-3"
                     onClick={() => {
-                        console.log("========================================");
-
-                        console.log("========================================");
+                        fetchTargetDom();
                     }}
                 >
-                    Test2
+                    FetchTargetDom
                 </button>
             </div>
         </>

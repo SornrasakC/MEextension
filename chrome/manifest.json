@@ -1,5 +1,5 @@
 {
-    "manifest_version": 2,
+    "manifest_version": 3,
     "name": "Your Extension's Name",
     "short_name": "Your Extensions 'Short Name'",
     "version": "1.0.0",
@@ -9,9 +9,22 @@
         "48": "icons/ghost48.png",
         "128": "icons/ghost128.png"
     },
-    "browser_action": {
+    "action": {
         "default_title": "Chrome Extension Boilerplate",
         "default_popup": "index.html"
     },
-    "permissions": ["activeTab", "<all_urls>"]
+    "permissions": ["activeTab", "scripting", "tabs", "storage"],
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "content-script.js",
+                "content-script.js.map",
+                "nico-douga.js",
+                "nico-douga.js.map",
+                "speed-bnb-reader.js",
+                "speed-bnb-reader.js.map"
+            ],
+            "matches": ["<all_urls>"]
+        }
+    ]
 }

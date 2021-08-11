@@ -3,11 +3,21 @@ const HtmlWebpackPlugin = require("html-webpack-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
 const baseManifest = require("./chrome/manifest.json");
 const WebpackExtensionManifestPlugin = require("webpack-extension-manifest-plugin");
+const glob = require("glob");
+const _ = require("lodash");
+
 const config = {
     mode: "development",
     devtool: "cheap-module-source-map",
     entry: {
         app: path.join(__dirname, "static", "index.js"),
+        "content-script": path.join(__dirname, "app/content-scripts", "content-script.js"),
+        ...Object.fromEntries(
+            _.zip(
+                glob.sync("*.js", { cwd: "app/handlers" }).map((filename) => filename.split(".")[0]),
+                glob.sync("./app/handlers/*.js")
+            )
+        ),
     },
     output: {
         path: path.resolve(__dirname, "build"),
@@ -48,7 +58,7 @@ const config = {
             {
                 test: /\.js$/,
                 exclude: /node_modules/,
-                use: ["babel-loader"]
+                use: ["babel-loader"],
             },
             {
                 test: /\.css$/,
