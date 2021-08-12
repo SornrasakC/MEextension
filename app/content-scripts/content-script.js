@@ -1,5 +1,5 @@
-import domtoimage from "dom-to-image";
-import { messages } from "@extend-chrome/messages";
+// import domtoimage from "dom-to-image";
+// import { messages } from "@extend-chrome/messages";
 
 // messages.send({
 //     greeting: "greeting from content-script.js",
@@ -12,41 +12,11 @@ import { messages } from "@extend-chrome/messages";
 //     main();
 // })
 
+// ========================================
 
-async function main() {
-    console.log("========================================");
-    console.log("domtoimage:", domtoimage);
-    console.log("========================================");
+// Code to run on extension pop-up
 
-    const id = 6;
-    const container = document.getElementById(`page_${id}`);
-    container.scrollIntoView();
-    console.log("========================================");
-    console.log("container:", container);
-    console.log("========================================");
-
-    const node = container.children[0];
-
-    const dataUrl = await domtoimage.toPng(node);
-    // const zip = new JSZip();
-    // const folder = zip.folder("collection");
-
-    const dat = dataUrl.split("base64,")[1];
-
-    console.log("========================================");
-    console.log("dataUrl:", dataUrl.substring(0, 50));
-    console.log("========================================");
-
-    console.log("========================================");
-    console.log("dat:", dat.substring(0, 50));
-    console.log("========================================");
-
-    messages.send({
-        greeting: "greeting from content-script.js",
-        data: dataUrl.substring(0, 50),
-    });
-}
-
-// main();
+// ========================================
 
 
+console.log('content-script.js finished')

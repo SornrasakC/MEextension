@@ -1,13 +1,10 @@
 import React, { useEffect, useState, useReducer } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import withDom, { withDomGen, useTargetDom, runContentScript } from "./utils/chrome/access";
+import { executeSpeedBnbReaderScript, executeNicoDougaScript } from "./handlers/entries/entry";
 import { unpackReducer, timeout } from "./utils/utils";
 
 // import { messages } from "@extend-chrome/messages";
-
-import domtoimage from "dom-to-image";
-import JSZip from "jszip";
-import { saveAs } from "file-saver";
 
 export default function App() {
     // const [targetDom, fetchTargetDom, isTargetDomReady] = useTargetDom();
@@ -33,20 +30,14 @@ export default function App() {
         setMeta({ filenamePrefix: `${meta.title} Ch.${meta.chapter}` });
     }, [meta.chapter, meta.title]);
 
-    // useEffect(() => {
-    //     while (!isTargetDomReady);
-    //     const chapter = targetDom.getElementsByClassName("episode_title")[0].textContent.match(/\d+/)[0];
-    //     setMeta({ chapter });
-    // }, []);
-
     const [pageRanges, setPageRanges] = useReducer(unpackReducer, {
         startPage: 0,
         endPage: 60,
     });
 
     const mainTest = async () => {
-
-        runContentScript();
+        console.log("mainTested");
+        // runContentScript();
         // messages.send({
         //     greeting: "greeting from app.js",
         //     data: "",
@@ -58,8 +49,6 @@ export default function App() {
             <div className="container">
                 <h1>MEextention</h1>
 
-                {/* <div className="m-3 p-3">isTargetReady: {isTargetDomReady + ""}</div> */}
-
                 <button
                     className="m-3 p-3"
                     onClick={() => {
@@ -69,13 +58,31 @@ export default function App() {
                     MainTest
                 </button>
 
-                <button
+                {/* <button
                     className="m-3 p-3"
                     onClick={() => {
                         fetchTargetDom();
                     }}
                 >
                     FetchTargetDom
+                </button> */}
+                <hr />
+                <button
+                    className="m-3 p-3"
+                    onClick={() => {
+                        executeNicoDougaScript();
+                    }}
+                >
+                    executeNicoDougaScript
+                </button>
+
+                <button
+                    className="m-3 p-3"
+                    onClick={() => {
+                        executeSpeedBnbReaderScript();
+                    }}
+                >
+                    executeSpeedBnbReaderScript
                 </button>
             </div>
         </>

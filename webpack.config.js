@@ -1,5 +1,6 @@
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
+const HtmlWebpackSkipAssetsPlugin = require("html-webpack-skip-assets-plugin").HtmlWebpackSkipAssetsPlugin;
 const CopyPlugin = require("copy-webpack-plugin");
 const baseManifest = require("./chrome/manifest.json");
 const WebpackExtensionManifestPlugin = require("webpack-extension-manifest-plugin");
@@ -14,7 +15,9 @@ const config = {
         "content-script": path.join(__dirname, "app/content-scripts", "content-script.js"),
         ...Object.fromEntries(
             _.zip(
-                glob.sync("*.js", { cwd: "app/handlers" }).map((filename) => filename.split(".")[0]),
+                // keys eg. [ 'handlers/nico-douga', ...]
+                glob.sync("handlers/*.js", { cwd: "app" }).map((filename) => filename.split(".")[0]),
+                // values eg. [ './app/handlers/nico-douga.js', ...]
                 glob.sync("./app/handlers/*.js")
             )
         ),
@@ -38,6 +41,9 @@ const config = {
             filename: "index.html",
             template: "./static/index.html",
             hash: true,
+        }),
+        new HtmlWebpackSkipAssetsPlugin({
+            excludeAssets: [/handlers\/*/],
         }),
         new CopyPlugin({
             patterns: [

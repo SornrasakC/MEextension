@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
 
-export function getCurrentTabId(tabCallback) {
-    chrome.tabs.query({ currentWindow: true, active: true }, (tabArray) => {
-        tabCallback(tabArray[0].id);
+export async function getCurrentTabId() {
+    return new Promise((resolve) => {
+        chrome.tabs.query({ currentWindow: true, active: true }, (tabArray) => {
+            resolve(tabArray[0].id);
+        });
     });
 }
 
@@ -14,6 +16,7 @@ export function withDomGen(setHook) {
     return (func) => _withDom(func, setHook);
 }
 
+// https://stackoverflow.com/questions/19758028/chrome-extension-get-dom-content
 export async function _withDom(func, setHook = () => {}) {
     // function func() {
     //     // You can play with your DOM here or check URL against your regex
@@ -23,21 +26,23 @@ export async function _withDom(func, setHook = () => {}) {
     //     return document.body.innerHTML;
     // }
 
-    // https://stackoverflow.com/questions/19758028/chrome-extension-get-dom-content
     // We have permission to access the activeTab, so we can call chrome.tabs.executeScript:
     // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/tabs/executeScript
-    return getCurrentTabId((tabId) =>
-        chrome.scripting.executeScript(
-            {
-                target: { tabId },
-                function: func,
-            },
-            (res) => {
-                // https://www.py4u.net/discuss/284401
-                setHook(res);
-            }
-        )
+    const tabId = await getCurrentTabId();
+
+    void chrome.scripting.executeScript(
+        {
+            target: { tabId },
+            function: func,
+        },
+        (res) => {
+            // https://www.py4u.net/discuss/284401
+            // ManifestV3 dont return array anymore, only active tab response
+            setHook(res);
+        }
     );
+
+    return;
 }
 
 /**
@@ -97,13 +102,10 @@ export function useTargetDom() {
 //     return targetDom;
 // }
 
-export function runContentScript() {
-    return getCurrentTabId((tabId) =>
-        chrome.scripting.executeScript(
-            {
-                target: { tabId },
-                files: ["content-script.js"],
-            }
-        )
-    );
+export async function runContentScript() {
+    const tabId = await getCurrentTabId();
+    chrome.scripting.executeScript({
+        target: { tabId },
+        files: ["content-script.js"],
+    });
 }
