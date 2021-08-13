@@ -1,99 +1,108 @@
 import React, { useEffect, useState, useReducer } from "react";
-import "bootstrap/dist/css/bootstrap.min.css";
+import "tailwindcss/tailwind.css";
 import withDom, { withDomGen, useTargetDom, runContentScript } from "./utils/chrome/access";
 import { executeSpeedBinbReaderScript, executeNicoDougaScript, executeComicWalkerScript } from "./handlers/entries/entry";
 import { unpackReducer, timeout } from "./utils/utils";
 
-// import { messages } from "@extend-chrome/messages";
-
 export default function App() {
-    // const [targetDom, fetchTargetDom, isTargetDomReady] = useTargetDom();
+	const [meta, setMeta] = useReducer(unpackReducer, {
+		chapter: 0,
+		title: "KoibitoMuriMuri",
+		filenamePrefix: `KoibitoMuriMuri Ch.0`,
+	});
 
-    // messages.on((message, sender, sendResponse) => {
-    //     if (message.greeting != "greeting from content-script.js") return;
+	useEffect(() => {
+		// setMeta({ filenamePrefix: `${meta.title} Ch.${meta.chapter}` });
+	}, [meta.chapter, meta.title]);
 
-    //     console.log("========================================");
-    //     console.log(sender.id, "said hello");
-    //     console.log("message:", message);
-    //     console.log("========================================");
+	const [pageRanges, setPageRanges] = useReducer(unpackReducer, {
+		startPage: 0,
+		endPage: 60,
+	});
 
-    //     // sendResponse({ farewell: "goodbye" });
-    // });
+	const mainTest = async () => {
+		console.log("mainTested");
+		// runContentScript();
+		// messages.send({
+		//     greeting: "greeting from app.js",
+		//     data: "",
+		// });
+	};
 
-    const [meta, setMeta] = useReducer(unpackReducer, {
-        chapter: 0,
-        title: "KoibitoMuriMuri",
-        filenamePrefix: `KoibitoMuriMuri Ch.0`,
-    });
+	return (
+		<>
+			<div className="flex flex-col p-4 h-full">
+				<h1 className="leading-3 font-bold">Manga Extractor</h1>
 
-    useEffect(() => {
-        setMeta({ filenamePrefix: `${meta.title} Ch.${meta.chapter}` });
-    }, [meta.chapter, meta.title]);
+				<label htmlFor="reader" className="text-lg font-bold">
+					Reader
+				</label>
 
-    const [pageRanges, setPageRanges] = useReducer(unpackReducer, {
-        startPage: 0,
-        endPage: 60,
-    });
+				<div id="reader-select" className="relative">
+					<input
+						name="reader"
+						type="text"
+						placeholder="ABC Reader"
+						className="self-center p-1 my-2 w-4/5 rounded-md border-2 border-red-500 focus:ring-2 focus:ring-red-400 text-gray-500 outline-none"
+					/>
+					<div className="relative">
+						<button className="cursor-pointer flex items-center outline-none focus:outline-none">
+							Reader A
+						</button>
+					</div>
+				</div>
 
-    const mainTest = async () => {
-        console.log("mainTested");
-        // runContentScript();
-        // messages.send({
-        //     greeting: "greeting from app.js",
-        //     data: "",
-        // });
-    };
+				<label htmlFor="zip-name">Zip Name</label>
+				<input name="zip-name" type="text" />
+				<label htmlFor="page-name">Page Name</label>
+				<input name="page-name" type="text" />
 
-    return (
-        <>
-            <div className="container">
-                <h1>MEextention</h1>
+				<div className="flex justify-center">
+					<button
+						type="button"
+						className="rounded-md px-4 py-2 bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 text-white"
+					>
+						Reset
+					</button>
+					<div className="p-2"></div>
+					<button
+						type="button"
+						className="rounded-md px-4 py-2 bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 text-white"
+					>
+						Extract!
+					</button>
+				</div>
+			</div>
+			{/* <div className="container">
+				<h1>MEextention</h1>
 
-                <button
-                    className="m-3 p-3"
-                    onClick={() => {
-                        mainTest();
-                    }}
-                >
-                    MainTest
-                </button>
+				<button
+					className="m-3 p-3"
+					onClick={() => {
+						mainTest();
+					}}
+				>
+					MainTest
+				</button>
+				<hr />
+				<button
+					className="m-3 p-3"
+					onClick={() => {
+						executeNicoDougaScript();
+					}}
+				>
+					executeNicoDougaScript
+				</button>
 
-                {/* <button
-                    className="m-3 p-3"
-                    onClick={() => {
-                        fetchTargetDom();
-                    }}
-                >
-                    FetchTargetDom
-                </button> */}
-                <hr />
-                <button
-                    className="m-3 p-3"
-                    onClick={() => {
-                        executeNicoDougaScript();
-                    }}
-                >
-                    executeNicoDougaScript
-                </button>
-
-                <button
-                    className="m-3 p-3"
-                    onClick={() => {
-                        executeSpeedBinbReaderScript();
-                    }}
-                >
-                    executeSpeedBinbReaderScript
-                </button>
-
-                <button
-                    className="m-3 p-3"
-                    onClick={() => {
-                        executeComicWalkerScript();
-                    }}
-                >
-                    executeComicWalkerScript
-                </button>
-            </div>
-        </>
-    );
+				<button
+					className="m-3 p-3"
+					onClick={() => {
+						executeSpeedBnbReaderScript();
+					}}
+				>
+					executeSpeedBnbReaderScript
+				</button>
+			</div> */}
+		</>
+	);
 }
