@@ -14,7 +14,8 @@ const TITLE = document
 const START_PAGE = 0;
 const END_PAGE = 60;
 
-const FILENAME_PREFIX = `第${CHAPTER}話 ${TITLE}`;
+const RAW_CHAPTER = document.getElementsByClassName("episode_title")[0].textContent;
+const FILENAME_PREFIX = `${RAW_CHAPTER} ${TITLE}`;
 
 async function main() {
     // const { CHAPTER, TITLE, START_PAGE, END_PAGE } = await storageGet(["CHAPTER", "TITLE", "START_PAGE", "END_PAGE"]);
