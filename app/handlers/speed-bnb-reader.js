@@ -71,11 +71,11 @@ function zipAndDownload(dataUrls) {
     console.log("Finalized");
 
     const zip = new JSZip();
-    const folder = zip.folder();
+    const folder = zip.folder(FILENAME_PREFIX);
 
     dataUrls.forEach(({ pageId, dataUrl }) => {
         const imageString = dataUrl.split("base64,")[1];
-        folder.file(`Ch-${CHAPTER} Pg-${zeroPad(pageId)}.png`, imageString, { base64: true });
+        folder.file(`${FILENAME_PREFIX}/Ch-${CHAPTER} Pg-${zeroPad(pageId)}.png`, imageString, { base64: true });
     });
 
     folder.generateAsync({ type: "blob" }).then((content) => saveAs(content, FILENAME_PREFIX));
