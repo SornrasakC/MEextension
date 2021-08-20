@@ -46,6 +46,7 @@
     "postcss-preset-env": "^6.7.0",
     "style-loader": "^3.0.0",
     "tailwindcss": "^2.2.7",
+    "tailwindcss-text-fill-stroke": "^1.1.2",
     "webpack": "^5.44.0",
     "webpack-cli": "^4.7.2",
     "webpack-extension-manifest-plugin": "^0.7.0"
