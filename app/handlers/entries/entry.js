@@ -3,6 +3,7 @@ import { getCurrentTabId } from "../../utils/chrome/access";
 export const READERS = {
     NICO_DOUGA: "handlers/nico-douga.js",
     SPEED_BNB: "handlers/speed-bnb-reader.js",
+    COMIC_WALKER: "handlers/comic-walker.js",
 };
 
 async function _execute(filename) {
@@ -26,4 +27,8 @@ export async function executeNicoDougaScript() {
 
 export async function executeSpeedBnbReaderScript() {
     return _execute(READERS.SPEED_BNB);
+}
+
+export async function executeComicWalkerScript() {
+    return _execute(READERS.COMIC_WALKER);
 }

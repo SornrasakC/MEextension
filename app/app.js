@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useReducer } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import withDom, { withDomGen, useTargetDom, runContentScript } from "./utils/chrome/access";
-import { executeSpeedBnbReaderScript, executeNicoDougaScript } from "./handlers/entries/entry";
+import { executeSpeedBnbReaderScript, executeNicoDougaScript, executeComicWalkerScript } from "./handlers/entries/entry";
 import { unpackReducer, timeout } from "./utils/utils";
 
 // import { messages } from "@extend-chrome/messages";
@@ -83,6 +83,15 @@ export default function App() {
                     }}
                 >
                     executeSpeedBnbReaderScript
+                </button>
+
+                <button
+                    className="m-3 p-3"
+                    onClick={() => {
+                        executeComicWalkerScript();
+                    }}
+                >
+                    executeComicWalkerScript
                 </button>
             </div>
         </>
