@@ -21,8 +21,8 @@
                 "content-script.js.map",
                 "handlers/nico-douga.js",
                 "handlers/nico-douga.js.map",
-                "handlers/speed-bnb-reader.js",
-                "handlers/speed-bnb-reader.js.map",
+                "handlers/speed-binb-reader.js",
+                "handlers/speed-binb-reader.js.map",
                 "handlers/comic-walker.js",
                 "handlers/comic-walker.js.map"
             ],
