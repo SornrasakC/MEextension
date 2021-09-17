@@ -2,7 +2,7 @@ import domtoimage from "dom-to-image";
 
 import { timeout, zipAndDownload } from "../utils/utils";
 
-const CHAPTER = document.getElementsByClassName("episode_title")[0].textContent.match(/\d+/)[0];
+// const CHAPTER = document.getElementsByClassName("episode_title")[0].textContent.match(/[0-9|\uff10-\uff19]+/g)[0];
 const TITLE = document
     .getElementsByClassName("manga_title")[0]
     .textContent.replace(/[/\\?%*:|"<>]\./g, "")
