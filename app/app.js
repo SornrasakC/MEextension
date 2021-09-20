@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useReducer } from "react";
-import "tailwindcss/tailwind.css";
 import withDom, {
   withDomGen,
   useTargetDom,
@@ -42,7 +41,14 @@ export default function App() {
     // });
   };
 
+  const readerOptions = [
+    { key: "A", value: "Nico-douga" },
+    { key: "B", value: "Comic-walker" },
+    { key: "C", value: "Speed-binb-reader" },
+  ];
+
   const [processState, setProcessState] = useState("success");
+  const [reader, setReader] = useState(readerOptions[0].key);
   /// Testing
   //   const states = ["ideal", "processing", "success"];
   //   useEffect(() => {
@@ -54,9 +60,6 @@ export default function App() {
   //     return () => clearInterval(interval);
   //   }, []);
 
-  const ディッブ = (props) => {
-    return <div {...props}>{props.children}</div>;
-  };
   const つむぎ = ({ className, state }) => {
     return state === "success" ? (
       <img src={successImage} className={className}></img>
@@ -69,7 +72,7 @@ export default function App() {
 
   return (
     <>
-      <ディッブ
+      <div
         className="relative overflow-hidden h-full"
         style={{
           backgroundImage: `url(${bgIamge})`,
@@ -77,67 +80,93 @@ export default function App() {
           backgroundPosition: `90% 40%`,
         }}
       >
-        <div className="relative h-full backdrop-filter backdrop-blur-md backdrop-brightness-70">
-          <section className="flex flex-col p-4">
-            <h1 className="mb-4 text-3xl text-white text-stroke paint-sfm-paintOrder text-stroke-black font-bold">
-              Manga Extractor
-            </h1>
-            <ディッブ
-              id="reader-select"
-              className="relative grid grid-cols-2 grid-rows-2 gap-2"
-            >
-              <div className="row-start-1 row-end-2 col-start-1 col-end-3 flex flex-col">
-                <label
-                  htmlFor="reader"
-                  className="text-xl text-fill-black text-stroke text-stroke-white font-bold"
-                >
-                  Reader
-                </label>
-                <input name="reader" type="text" placeholder="ABC Reader" />
-              </div>
-              <div className="row-start-2 row-end-3 col-start-1 col-end-2 flex flex-col">
-                <label
-                  htmlFor="zip-name"
-                  className="text-xl text-fill-black text-stroke font-bold"
-                >
-                  Zip Name
-                </label>
-                <input name="zip-name" type="text" />
-              </div>
-              <div className="row-start-2 row-end-3 col-start-2 col-end-3 flex flex-col">
-                <label
-                  htmlFor="page-name"
-                  className="text-xl text-fill-black text-stroke font-bold"
-                >
-                  Page Name
-                </label>
-                <input name="page-name" type="text" />
-              </div>
-            </ディッブ>
-          </section>
-
-          <section className="relative mt-4 min-h-full">
-            <div className="relative -left-14 w-11/12">
-              <つむぎ
-                className="filter drop-shadow-ideal transform scale-90 -translate-y-8"
-                state={processState}
-              />
-            </div>
-            <p className="absolute p-2 w-1/3 top-20 right-6 border-2 border-red-500">
-              むきゅ。。。いらっしゃいませ！。
-            </p>
-            <div className="absolute top-1/3 right-8">
-              <button
-                type="button"
-                className="rounded-md px-4 py-8 bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 text-white"
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            // handle submit form
+          }}
+        >
+          <div className="relative h-full backdrop-filter backdrop-blur-md backdrop-brightness-70">
+            <section className="flex flex-col p-4">
+              <h1 className="mb-4 text-3xl text-white text-stroke paint-sfm-paintOrder text-stroke-black font-bold">
+                Mugyu Extractor
+              </h1>
+              <div
+                id="reader-select"
+                className="relative grid grid-cols-2 grid-rows-2 gap-2"
               >
-                開
-                <br />始
-              </button>
-            </div>
-          </section>
-        </div>
-      </ディッブ>
+                <div className="row-start-1 row-end-2 col-start-1 col-end-3 flex flex-col">
+                  <label
+                    htmlFor="reader"
+                    className="text-xl font-bold filter drop-shadow-seround-text"
+                  >
+                    カサ。クソ。
+                  </label>
+                  <select
+                    name="reader"
+                    className="p-1 rounded-sm focus:outline-none"
+                    value={reader}
+                    onChange={(e) => setReader(e.target.value)}
+                  >
+                    {readerOptions.map((item) => (
+                      <option value={item.key}>{item.value}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="row-start-2 row-end-3 col-start-1 col-end-2 flex flex-col">
+                  <label
+                    htmlFor="zip-name"
+                    className="text-xl font-bold filter drop-shadow-seround-text"
+                  >
+                    Zip Name
+                  </label>
+                  <input
+                    name="zip-name"
+                    type="text"
+                    placeholder="{Title}-{Chapter}"
+                    className="px-1 rounded-sm focus:outline-none"
+                  />
+                </div>
+                <div className="row-start-2 row-end-3 col-start-2 col-end-3 flex flex-col">
+                  <label
+                    htmlFor="page-name"
+                    className="text-xl font-bold filter drop-shadow-seround-text"
+                  >
+                    Page Name
+                  </label>
+                  <input
+                    name="page-name"
+                    type="text"
+                    placeholder="{Chapter}-{PageNum}"
+                    className="px-1 rounded-sm focus:outline-none"
+                  />
+                </div>
+              </div>
+            </section>
+
+            <section className="relative mt-4 min-h-full">
+              <div className="relative -left-14 w-11/12">
+                <つむぎ
+                  className="filter drop-shadow-ideal transform scale-90 -translate-y-8"
+                  state={processState}
+                />
+              </div>
+              <p className="absolute p-2 w-1/3 top-20 right-6 border-2 border-red-500">
+                むきゅ。。。いらっしゃいませ！。
+              </p>
+              <div className="absolute top-1/3 right-8">
+                <button
+                  type="submit"
+                  className="rounded-md px-4 py-8 bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 text-white"
+                >
+                  開
+                  <br />始
+                </button>
+              </div>
+            </section>
+          </div>
+        </form>
+      </div>
       {/* <div className="container">
 				<h1>MEextention</h1>
 
