@@ -20,6 +20,9 @@ module.exports = {
       brightness: {
         70: ".7",
       },
+      borderColor: {
+        つむき: "#EABF80",
+      },
       dropShadow: {
         "seround-text": [
           `.6px .6px 0 #fff`,
