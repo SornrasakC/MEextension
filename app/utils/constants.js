@@ -1,0 +1,5 @@
+export const PROGRESS_STATUS = {
+    READING: "READING",
+    FINALIZING: "FINALIZING",
+    FINISHED: "FINISHED",
+}

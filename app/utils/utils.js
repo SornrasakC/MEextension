@@ -7,7 +7,7 @@ export const timeout = (time) => new Promise((r) => setTimeout(r, time));
 
 export const zeroPad = (pageId, length = 3) => ("" + pageId).padStart(length, "0");
 
-export const zipAndDownload = (dataUrls, { FILENAME_PREFIX, CHAPTER }) => {
+export const zipAndDownload = (dataUrls, { FILENAME_PREFIX, CHAPTER }, callback) => {
     console.log("Finalizing:", FILENAME_PREFIX);
 
     const zip = new JSZip();
@@ -17,6 +17,8 @@ export const zipAndDownload = (dataUrls, { FILENAME_PREFIX, CHAPTER }) => {
         const imageString = dataUrl.split("base64,")[1];
         folder.file(`${FILENAME_PREFIX}/Ch-${CHAPTER} Pg-${zeroPad(pageId)}.png`, imageString, { base64: true });
     });
+
+    if(callback) callback();
 
     folder.generateAsync({ type: "blob" }).then((content) => saveAs(content, FILENAME_PREFIX));
 };

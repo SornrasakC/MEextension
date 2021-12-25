@@ -1,8 +1,13 @@
 import React, { useEffect, useState, useReducer } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import withDom, { withDomGen, useTargetDom, runContentScript } from "./utils/chrome/access";
-import { executeSpeedBinbReaderScript, executeNicoDougaScript, executeComicWalkerScript } from "./handlers/entries/entry";
+import {
+    executeSpeedBinbReaderScript,
+    executeNicoDougaScript,
+    executeComicWalkerScript,
+} from "./handlers/entries/entry";
 import { unpackReducer, timeout } from "./utils/utils";
+import { setListener } from "./utils/chrome/access";
 
 // import { messages } from "@extend-chrome/messages";
 
@@ -19,6 +24,12 @@ export default function App() {
 
     //     // sendResponse({ farewell: "goodbye" });
     // });
+
+    setListener((inp) => {
+        console.log("========================================");
+        console.log("inp:", inp);
+        console.log("========================================");
+    });
 
     const [meta, setMeta] = useReducer(unpackReducer, {
         chapter: 0,
@@ -69,8 +80,8 @@ export default function App() {
                 <hr />
                 <button
                     className="m-3 p-3"
-                    onClick={() => {
-                        executeNicoDougaScript();
+                    onClick={async () => {
+                        await executeNicoDougaScript();
                     }}
                 >
                     executeNicoDougaScript

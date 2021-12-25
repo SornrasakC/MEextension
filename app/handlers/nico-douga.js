@@ -1,6 +1,9 @@
 import domtoimage from "dom-to-image";
 
 import { timeout, zipAndDownload } from "../utils/utils";
+import { getConnName } from "../utils/chrome/access";
+import { PROGRESS_STATUS } from "../utils/constants";
+import { storageGet } from "../utils/chrome/storage";
 
 // const CHAPTER = document.getElementsByClassName("episode_title")[0].textContent.match(/[0-9|\uff10-\uff19]+/g)[0];
 const TITLE = document
@@ -13,12 +16,29 @@ const END_PAGE = 60;
 const RAW_CHAPTER = document.getElementsByClassName("episode_title")[0].textContent;
 const FILENAME_PREFIX = `${RAW_CHAPTER} ${TITLE}`;
 
+// TODO reconnect if port disconnected
+
 async function main() {
+    const { ["me-conn-name"]: connName } = await storageGet("me-conn-name");
+    const sget = await storageGet("asd");
+    console.log('========================================')
+    console.log('sget:', sget)
+    console.log('========================================')
+    
+
+    const port = chrome.runtime.connect({ name: connName });
+
     console.log(`Start extract on: ${FILENAME_PREFIX}`);
+    port.postMessage({ status: PROGRESS_STATUS.READING });
 
     const dataUrls = await extract(START_PAGE, END_PAGE);
+    port.postMessage({ status: PROGRESS_STATUS.FINALIZING });
 
-    zipAndDownload(dataUrls, { FILENAME_PREFIX, CHAPTER: RAW_CHAPTER });
+    zipAndDownload(
+        dataUrls,
+        { FILENAME_PREFIX, CHAPTER: RAW_CHAPTER },
+        (() => port.postMessage({ status: PROGRESS_STATUS.FINISHED })).bind(port)
+    );
 }
 
 /**

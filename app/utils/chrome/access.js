@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from "react";
+import { storageSet } from "./storage";
+// import { PROGRESS_STATUS } from "../constants";
 
 export async function getCurrentTabId() {
     return new Promise((resolve) => {
@@ -6,6 +8,22 @@ export async function getCurrentTabId() {
             resolve(tabArray[0].id);
         });
     });
+}
+
+export async function getConnName() {
+    const tabId = await getCurrentTabId();
+    return `ME-${tabId}`;
+}
+
+export async function setListener(callback) {
+    const connName = await getConnName();
+    await storageSet({ ["me-conn-name"]: connName });
+    chrome.runtime.onConnect.addListener((port) => {
+        console.assert(port.name === connName);
+        port.onMessage.addListener(callback);
+    });
+    // const port = chrome.runtime.connect({ name: connName });
+    // port.onMessage.addListener(callback);
 }
 
 export default function withDom(func) {
