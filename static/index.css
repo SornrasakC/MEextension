@@ -1,8 +1,26 @@
+@tailwind base;
+@tailwind components;
+
+@font-face {
+  font-family: "SummerPocket";
+  src: url(./fonts/font01.ttf);
+}
+
+@tailwind utilities;
+
 html,
 body {
-    height: 500px;
-    width: 800px;
-    margin: 0;
-    padding: 0;
-    overflow-x: hidden;
+  height: 580px;
+  width: 350px;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  /* background-color: black; */
+  overflow: hidden;
+}
+
+#root {
+  height: 100%;
+  font-size: 18px;
+  font-family: "SummerPocket";
 }
