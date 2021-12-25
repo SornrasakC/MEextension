@@ -26,6 +26,22 @@ export async function setListener(callback) {
   // port.onMessage.addListener(callback);
 }
 
+export async function getConnName() {
+    const tabId = await getCurrentTabId();
+    return `ME-${tabId}`;
+}
+
+export async function setListener(callback) {
+    const connName = await getConnName();
+    await storageSet({ ["me-conn-name"]: connName });
+    chrome.runtime.onConnect.addListener((port) => {
+        console.assert(port.name === connName);
+        port.onMessage.addListener(callback);
+    });
+    // const port = chrome.runtime.connect({ name: connName });
+    // port.onMessage.addListener(callback);
+}
+
 export default function withDom(func) {
   return _withDom(func, () => {});
 }

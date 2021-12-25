@@ -33,6 +33,7 @@ export default function App() {
   const [_, action] = useFrontState();
   const [reader, setReader] = useState(readerOptions[0].key);
 
+
   const [meta, setMeta] = useReducer(unpackReducer, {
     chapter: 0,
     title: "KoibitoMuriMuri",
@@ -59,6 +60,7 @@ export default function App() {
       }
     });
   }, []);
+
 
   useEffect(() => {
     // TODO: Uncomment this line in production mode

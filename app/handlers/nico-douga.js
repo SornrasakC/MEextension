@@ -20,6 +20,7 @@ const FILENAME_PREFIX = `${RAW_CHAPTER} ${TITLE}`;
 // TODO reconnect if port disconnected
 
 async function main() {
+
   const { ["me-conn-name"]: connName } = await storageGet("me-conn-name");
 
   const port = chrome.runtime.connect({ name: connName });
