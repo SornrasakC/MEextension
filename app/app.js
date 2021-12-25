@@ -1,25 +1,23 @@
 import React, { useEffect, useState, useReducer } from "react";
-import withDom, {
-  withDomGen,
-  useTargetDom,
-  runContentScript,
-} from "./utils/chrome/access";
 import {
-  executeSpeedBnbReaderScript,
+  executeSpeedBinbReaderScript,
   executeNicoDougaScript,
+  executeComicWalkerScript,
 } from "./handlers/entries/entry";
 import { unpackReducer, timeout } from "./utils/utils";
 import { storageSet } from "./utils/chrome/storage";
+import { setListener } from "./utils/chrome/access";
 
 import bgImage from "../static/assets/bg.png";
 import ReaderSelector from "./component/ReaderSelector";
 import Label from "./component/Label";
-import つむぎ from "./component/つむぎ.js";
+import Tsumugi from "./component/Tsumugi.js";
 import Input from "./component/Input";
 import Title from "./component/Title";
-import BackgroundFilter from "./component/BackgroundFilter";
 
-import { READERS } from "./utils/constants";
+import { READERS, PROGRESS_STATUS } from "./utils/constants";
+import { useFrontState } from "./context/FrontStateContext";
+import Dialog from "./component/Dialog";
 
 async function kaishi(reader, zipName, pageName) {
   return storageSet({ reader, zipName, pageName });
@@ -32,7 +30,7 @@ const readerOptions = [
 ];
 
 export default function App() {
-  const [processState, setProcessState] = useState("success");
+  const [_, action] = useFrontState();
   const [reader, setReader] = useState(readerOptions[0].key);
 
   const [meta, setMeta] = useReducer(unpackReducer, {
@@ -45,6 +43,22 @@ export default function App() {
     startPage: 0,
     endPage: 60,
   });
+
+  useEffect(() => {
+    setListener((msg) => {
+      const { status } = msg;
+      if (
+        status === PROGRESS_STATUS.READING ||
+        status === PROGRESS_STATUS.FINALIZING
+      ) {
+        action.toProcessing();
+      } else if (status === PROGRESS_STATUS.FINISHED) {
+        action.toFinish();
+      } else {
+        action.toIdle();
+      }
+    });
+  }, []);
 
   useEffect(() => {
     // TODO: Uncomment this line in production mode
@@ -65,10 +79,22 @@ export default function App() {
           onSubmit={(e) => {
             e.preventDefault();
             // handle submit form
+            if (reader === READERS.NICO_DOUGA) {
+              executeNicoDougaScript();
+            } else if (reader === READERS.SPEED_BINB) {
+              executeSpeedBinbReaderScript();
+            } else if (reader === READERS.COMIC_WALKER) {
+              executeComicWalkerScript();
+            } else return;
           }}
         >
-          <BackgroundFilter>
-            <section className="flex flex-col p-4">
+          <div
+            style={{
+              height: "650px",
+            }}
+            className={`relative backdrop-filter backdrop-blur-md backdrop-brightness-80 flex flex-col p-4`}
+          >
+            <section>
               <Title>Mugyu Extractor</Title>
               <div
                 id="reader-select"
@@ -103,29 +129,42 @@ export default function App() {
               </div>
             </section>
 
-            <section className="relative mt-4 min-h-full">
-              <div className="relative -left-14 w-11/12">
-                <つむぎ
-                  className="filter drop-shadow-ideal transform scale-90 -translate-y-8"
-                  state={processState}
-                />
+            <section className="min-h-full">
+              <div className="absolute right-20 -left-20 top-1/3">
+                <Tsumugi />
               </div>
-              <p className="absolute p-2 w-1/3 top-20 right-6 rounded-md border-2 border-つむき border-opacity-60">
-                むきゅ。。。いらっしゃいませ！。
-              </p>
-              <div className="absolute top-1/3 right-8">
+              <div className="absolute right-5 top-1/3 m-3">
+                <Dialog />
+              </div>
+              <div className="absolute left-3/4 top-2/3">
                 <button
                   type="submit"
-                  className="rounded-md px-4 py-8 bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 text-white"
+                  className="border-2 border-pink-300 rounded-md px-4 py-8 bg-gradient-to-br from-blue-400  to-green-300 text-white shadow-md transform -translate-x-1 -translate-y-1"
                 >
                   開
                   <br />始
                 </button>
               </div>
             </section>
-          </BackgroundFilter>
+          </div>
         </form>
       </div>
     </>
   );
 }
+
+// <div className="relative -left-14 w-11/12">
+//   <Tsumugi />
+// </div>
+// <div className="absolute z-20 top-0 right-0 left-0 w-full">
+//   <Dialog />
+// </div>
+// <div className="absolute top-2/4 right-8">
+//   <button
+//     type="submit"
+//     className="rounded-md px-4 py-8 bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 text-white"
+//   >
+//     開
+//     <br />始
+//   </button>
+// </div>

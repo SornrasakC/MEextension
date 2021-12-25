@@ -21,7 +21,7 @@ module.exports = {
         70: ".7",
       },
       borderColor: {
-        つむき: "#EABF80",
+        tsumugi: "#EABF80",
       },
       dropShadow: {
         "seround-text": [
@@ -38,5 +38,20 @@ module.exports = {
     },
   },
   variants: {},
-  plugins: [require("tailwindcss-text-fill-stroke")()],
+  plugins: [
+    require("tailwindcss-text-fill-stroke")(),
+    plugin(({ addUtilities }) => {
+      addUtilities({
+        ".horizontal-tb": {
+          writingMode: "horizontal-tb",
+        },
+        ".vertical-rl": {
+          writingMode: "vertical-rl",
+        },
+        ".vertical-lr": {
+          writingMode: "vertical-lr",
+        },
+      });
+    }),
+  ],
 };
