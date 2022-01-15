@@ -1,6 +1,7 @@
 # CUSTOM
 build
 dump
+release-tools/releases/*
 
 # Logs
 logs
