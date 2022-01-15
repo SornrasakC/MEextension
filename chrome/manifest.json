@@ -24,7 +24,9 @@
                 "handlers/speed-binb-reader.js",
                 "handlers/speed-binb-reader.js.map",
                 "handlers/comic-walker.js",
-                "handlers/comic-walker.js.map"
+                "handlers/comic-walker.js.map",
+                "handlers/comic-pixiv.js",
+                "handlers/comic-pixiv.js.map"
             ],
             "matches": ["<all_urls>"]
         }
