@@ -4,6 +4,7 @@ import {
     executeNicoDougaScript,
     executeComicWalkerScript,
     executeComicPixivScript,
+    executeKindleScript
 } from "./handlers/entries/entry";
 import { unpackReducer, timeout } from "./utils/utils";
 import { storageSet } from "./utils/chrome/storage";
@@ -29,6 +30,7 @@ const readerOptions = [
     { key: READERS.COMIC_WALKER, value: READERS.COMIC_WALKER },
     { key: READERS.SPEED_BINB, value: READERS.SPEED_BINB },
     { key: READERS.COMIC_PIXIV, value: READERS.COMIC_PIXIV },
+    { key: READERS.KINDLE, value: READERS.KINDLE },
 ];
 
 export default function App() {
@@ -86,6 +88,8 @@ export default function App() {
                             executeComicWalkerScript();
                         } else if (reader === READERS.COMIC_PIXIV) {
                             executeComicPixivScript();
+                        } else if (reader === READERS.KINDLE) {
+                            executeKindleScript();
                         } else return;
                     }}
                 >

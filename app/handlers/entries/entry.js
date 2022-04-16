@@ -5,6 +5,7 @@ export const READERS = {
     SPEED_BINB: "handlers/speed-binb-reader.js",
     COMIC_WALKER: "handlers/comic-walker.js",
     COMIC_PIXIV: "handlers/comic-pixiv.js",
+    KINDLE: "handlers/kindle.js",
 };
 
 async function _execute(filename) {
@@ -36,4 +37,8 @@ export async function executeComicWalkerScript() {
 
 export async function executeComicPixivScript() {
     return _execute(READERS.COMIC_PIXIV);
+}
+
+export async function executeKindleScript() {
+    return _execute(READERS.KINDLE);
 }

@@ -9,6 +9,7 @@ export const READERS = {
   COMIC_WALKER: "Comic-walker",
   SPEED_BINB: "Speed-binb-reader",
   COMIC_PIXIV: "Comic-pixiv",
+  KINDLE: "Kindle",
 };
 
 export const FRONT_STATE = {
