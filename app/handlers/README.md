@@ -6,7 +6,7 @@ Don't forget to update
 - chrome/manifest.json -> web_accessible_resources -> resources -> added file name
 
 # Test URLs
-## SpeedBnb Reader 
+## SpeedBinb Reader 
 - https://storia.takeshobo.co.jp/manga/himegimi/
 
 ## Nico Douga
