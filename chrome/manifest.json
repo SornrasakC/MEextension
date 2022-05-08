@@ -2,8 +2,8 @@
     "manifest_version": 3,
     "name": "Manga Extractor",
     "short_name": "MEext",
-    "version": "1.0.0",
-    "description": "Various tools for extracting manga from various site / reader. Currently support NicoDouga, SpeedBnbReader.",
+    "version": "2.0.0",
+    "description": "Various tools for extracting manga from various site / reader.",
     "icons": {
         "16": "icons/ghost16.png",
         "48": "icons/ghost48.png",

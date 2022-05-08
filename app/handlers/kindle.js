@@ -22,7 +22,7 @@ const getRawChapter = () => {
 }
 
 const RAW_CHAPTER = getRawChapter();
-const CHAPTER = RAW_CHAPTER.match(/[0-9]*/g)[0];
+const CHAPTER = RAW_CHAPTER.match(/[0-9]+/g)[0];
 const FILENAME_PREFIX = `${RAW_CHAPTER} ${TITLE}`;
 
 // TODO reconnect if port disconnected
