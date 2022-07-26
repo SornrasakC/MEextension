@@ -6,6 +6,7 @@ export const READERS = {
     COMIC_WALKER: "handlers/comic-walker.js",
     COMIC_PIXIV: "handlers/comic-pixiv.js",
     KINDLE: "handlers/kindle.js",
+    COMICBUSHI: "handlers/comicbushi.js",
 };
 
 async function _execute(filename) {
@@ -41,4 +42,8 @@ export async function executeComicPixivScript() {
 
 export async function executeKindleScript() {
     return _execute(READERS.KINDLE);
+}
+
+export async function executeComicbushiScript() {
+    return _execute(READERS.COMICBUSHI);
 }

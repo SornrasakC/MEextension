@@ -34,3 +34,8 @@ function saveBase64AsFile(base64, fileName) {
 
     console.log("clicked:", fileName);
 }
+
+const LR = (elem) => (({ left, right }) => ({ left, right }))(elem.getBoundingClientRect());
+
+export const isElemOverLeft = (elem) => LR(elem).left < 0;
+export const isElemOverRight = (elem) => LR(elem).right > window.innerWidth;

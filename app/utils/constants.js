@@ -10,6 +10,7 @@ export const READERS = {
   SPEED_BINB: "Speed-binb-reader",
   COMIC_PIXIV: "Comic-pixiv",
   KINDLE: "Kindle",
+  COMICBUSHI: "Comicbushi (CORS blocked)",
 };
 
 export const FRONT_STATE = {

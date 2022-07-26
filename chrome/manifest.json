@@ -28,7 +28,9 @@
                 "handlers/comic-pixiv.js",
                 "handlers/comic-pixiv.js.map",
                 "handlers/kindle.js",
-                "handlers/kindle.js.map"
+                "handlers/kindle.js.map",
+                "handlers/comicbushi.js",
+                "handlers/comicbushi.js.map"
             ],
             "matches": ["<all_urls>"]
         }
