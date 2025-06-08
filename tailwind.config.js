@@ -1,9 +1,11 @@
-const plugin = require("tailwindcss/plugin");
-
-module.exports = {
-  purge: ["./build/index.html"],
-  darkMode: false, // or 'media' or 'class'
-  important: true,
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: [
+    "./static/**/*.{html,js}",
+    "./app/**/*.{js,jsx,ts,tsx}",
+    "./src/**/*.{js,jsx,ts,tsx}",
+    "./build/**/*.html"
+  ],
   theme: {
     textFillColor: (theme) => theme("borderColor"),
     textStrokeColor: (theme) => theme("borderColor"),
@@ -37,10 +39,8 @@ module.exports = {
       },
     },
   },
-  variants: {},
   plugins: [
-    require("tailwindcss-text-fill-stroke")(),
-    plugin(({ addUtilities }) => {
+    function({ addUtilities }) {
       addUtilities({
         ".horizontal-tb": {
           writingMode: "horizontal-tb",
@@ -52,6 +52,6 @@ module.exports = {
           writingMode: "vertical-lr",
         },
       });
-    }),
+    },
   ],
 };
