@@ -1,12 +1,26 @@
 import React from 'react';
+import { useFrontState } from '../hooks/useFrontState';
+import { FRONT_STATE } from '../types';
+
+import idealImage from '../../static/assets/ideal.png';
+import processingImage from '../../static/assets/processing.png';
+import successImage from '../../static/assets/success.png';
 
 export default function Tsumugi(): JSX.Element {
-  return (
-    <div className="flex items-center justify-center">
-      {/* TODO: Migrate the original Tsumugi component */}
-      <div className="w-32 h-32 bg-gradient-to-br from-pink-200 to-purple-300 rounded-full flex items-center justify-center">
-        <span className="text-purple-800 font-bold">つむぎ</span>
-      </div>
-    </div>
-  );
+  const [state] = useFrontState();
+  const className =
+    'filter drop-shadow-ideal transform scale-90 -translate-y-8';
+
+  console.log('Tsumugi', state);
+  
+  if (state === FRONT_STATE.FINISHED) {
+    // FINISH WITH SUCCESS
+    return <img src={successImage} className={className} alt="Success" />;
+  } else if (state === FRONT_STATE.PROCESSING) {
+    // PROCESSING
+    return <img src={processingImage} className={className} alt="Processing" />;
+  } else {
+    // IDLE
+    return <img src={idealImage} className={className} alt="Idle" />;
+  }
 } 

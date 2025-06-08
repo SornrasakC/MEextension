@@ -1,11 +1,11 @@
 // Reader types
 export enum READERS {
-  NICO_DOUGA = 'NICO_DOUGA',
-  COMIC_WALKER = 'COMIC_WALKER',
-  SPEED_BINB = 'SPEED_BINB',
-  COMIC_PIXIV = 'COMIC_PIXIV',
-  KINDLE = 'KINDLE',
-  COMICBUSHI = 'COMICBUSHI',
+  NICO_DOUGA = 'Nico-douga',
+  COMIC_WALKER = 'Comic-walker',
+  SPEED_BINB = 'Speed-binb-reader',
+  COMIC_PIXIV = 'Comic-pixiv',
+  KINDLE = 'Kindle',
+  COMICBUSHI = 'Comicbushi (CORS blocked)',
 }
 
 export enum PROGRESS_STATUS {
@@ -13,6 +13,13 @@ export enum PROGRESS_STATUS {
   READING = 'READING',
   FINALIZING = 'FINALIZING',
   FINISHED = 'FINISHED',
+}
+
+export enum FRONT_STATE {
+  IDLE = 'IDLE',
+  PROCESSING = 'PROCESSING',
+  FINISHED = 'FINISHED',
+  ERROR = 'ERROR',
 }
 
 // Component props
@@ -53,13 +60,14 @@ export interface PageRangesState {
 }
 
 export interface FrontState {
-  status: PROGRESS_STATUS;
+  status: FRONT_STATE;
 }
 
 export interface FrontStateActions {
   toIdle: () => void;
   toProcessing: () => void;
   toFinish: () => void;
+  toError?: () => void;
 }
 
 // Chrome extension types

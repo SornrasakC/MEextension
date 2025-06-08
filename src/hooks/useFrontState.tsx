@@ -1,41 +1,20 @@
-import React, { createContext, useContext, useReducer, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import {
-  PROGRESS_STATUS,
+  FRONT_STATE,
   type FrontState,
   type FrontStateActions,
 } from '../types';
 
 interface FrontStateContextType {
-  state: FrontState;
-  actions: FrontStateActions;
+  state: FRONT_STATE;
+  action: FrontStateActions & {
+    setState: (state: FRONT_STATE) => void;
+  };
 }
 
 const FrontStateContext = createContext<FrontStateContextType | undefined>(
   undefined
 );
-
-// Action types
-type FrontStateAction =
-  | { type: 'TO_IDLE' }
-  | { type: 'TO_PROCESSING' }
-  | { type: 'TO_FINISH' };
-
-// Reducer
-function frontStateReducer(
-  state: FrontState,
-  action: FrontStateAction
-): FrontState {
-  switch (action.type) {
-    case 'TO_IDLE':
-      return { ...state, status: PROGRESS_STATUS.IDLE };
-    case 'TO_PROCESSING':
-      return { ...state, status: PROGRESS_STATUS.READING };
-    case 'TO_FINISH':
-      return { ...state, status: PROGRESS_STATUS.FINISHED };
-    default:
-      return state;
-  }
-}
 
 // Provider component
 interface FrontStateProviderProps {
@@ -45,19 +24,39 @@ interface FrontStateProviderProps {
 export function FrontStateProvider({
   children,
 }: FrontStateProviderProps): JSX.Element {
-  const [state, dispatch] = useReducer(frontStateReducer, {
-    status: PROGRESS_STATUS.IDLE,
-  });
+  // TODO: Check with backend `PROCESS_STATUS`
+  // READING, FINALIZING = PROCESSING
+  // FINISH = FINISH
+  // Otherwise = IDLE
+  const [state, setState] = useState<FRONT_STATE>(FRONT_STATE.IDLE);
 
-  const actions: FrontStateActions = {
-    toIdle: () => dispatch({ type: 'TO_IDLE' }),
-    toProcessing: () => dispatch({ type: 'TO_PROCESSING' }),
-    toFinish: () => dispatch({ type: 'TO_FINISH' }),
-  };
+  // actions
+  const toIdle = useCallback(
+    () => setState(FRONT_STATE.IDLE),
+    [setState]
+  );
+  const toProcessing = useCallback(
+    () => setState(FRONT_STATE.PROCESSING),
+    [setState]
+  );
+  const toFinish = useCallback(
+    () => setState(FRONT_STATE.FINISHED),
+    [setState]
+  );
+  const toError = useCallback(
+    () => setState(FRONT_STATE.ERROR),
+    [setState]
+  );
 
   const value: FrontStateContextType = {
     state,
-    actions,
+    action: {
+      setState,
+      toIdle,
+      toProcessing,
+      toFinish,
+      toError,
+    },
   };
 
   return (
@@ -68,12 +67,12 @@ export function FrontStateProvider({
 }
 
 // Hook
-export function useFrontState(): [FrontState, FrontStateActions] {
+export function useFrontState(): [FRONT_STATE, FrontStateContextType['action']] {
   const context = useContext(FrontStateContext);
   
   if (context === undefined) {
     throw new Error('useFrontState must be used within a FrontStateProvider');
   }
 
-  return [context.state, context.actions];
+  return [context.state, context.action];
 } 
