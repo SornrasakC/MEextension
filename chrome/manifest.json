@@ -2,15 +2,15 @@
     "manifest_version": 3,
     "name": "Manga Extractor",
     "short_name": "MEext",
-    "version": "2.0.0",
+    "version": "3.0.0",
     "description": "Various tools for extracting manga from various site / reader.",
     "icons": {
-        "16": "icons/ghost16.png",
-        "48": "icons/ghost48.png",
-        "128": "icons/ghost128.png"
+        "16": "icons/tsumugi16.png",
+        "48": "icons/tsumugi48.png",
+        "128": "icons/tsumugi128.png"
     },
     "action": {
-        "default_title": "Chrome Extension Boilerplate",
+        "default_title": "Manga Extractor",
         "default_popup": "index.html"
     },
     "permissions": ["activeTab", "scripting", "tabs", "storage"],
