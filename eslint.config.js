@@ -18,10 +18,72 @@ export default [
         },
       },
       globals: {
+        // Chrome extension APIs
         chrome: 'readonly',
-        browser: true,
-        es2022: true,
-        node: true,
+        
+        // React/JSX globals
+        React: 'readonly',
+        JSX: 'readonly',
+        
+        // DOM types
+        HTMLElement: 'readonly',
+        HTMLInputElement: 'readonly',
+        HTMLSelectElement: 'readonly',
+        HTMLFormElement: 'readonly',
+        HTMLLabelElement: 'readonly',
+        HTMLHeadingElement: 'readonly',
+        HTMLDivElement: 'readonly',
+        HTMLButtonElement: 'readonly',
+        Element: 'readonly',
+        Node: 'readonly',
+        
+        // Browser globals
+        window: 'readonly',
+        document: 'readonly',
+        console: 'readonly',
+        navigator: 'readonly',
+        location: 'readonly',
+        history: 'readonly',
+        localStorage: 'readonly',
+        sessionStorage: 'readonly',
+        fetch: 'readonly',
+        XMLHttpRequest: 'readonly',
+        FormData: 'readonly',
+        URL: 'readonly',
+        URLSearchParams: 'readonly',
+        Blob: 'readonly',
+        File: 'readonly',
+        FileReader: 'readonly',
+        Image: 'readonly',
+        
+        // DOM events and APIs
+        Event: 'readonly',
+        CustomEvent: 'readonly',
+        MouseEvent: 'readonly',
+        KeyboardEvent: 'readonly',
+        WheelEvent: 'readonly',
+        TouchEvent: 'readonly',
+        MutationObserver: 'readonly',
+        IntersectionObserver: 'readonly',
+        ResizeObserver: 'readonly',
+        
+        // Timers
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
+        requestAnimationFrame: 'readonly',
+        cancelAnimationFrame: 'readonly',
+        
+        // Node.js globals (for build scripts)
+        process: 'readonly',
+        Buffer: 'readonly',
+        global: 'readonly',
+        __dirname: 'readonly',
+        __filename: 'readonly',
+        require: 'readonly',
+        module: 'readonly',
+        exports: 'readonly',
       },
     },
     plugins: {
@@ -35,10 +97,15 @@ export default [
       ...reactHooks.configs.recommended.rules,
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'off',
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': ['error', { 
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        caughtErrorsIgnorePattern: '^_'
+      }],
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
       '@typescript-eslint/no-explicit-any': 'warn',
+      'no-undef': 'error',
     },
     settings: {
       react: {

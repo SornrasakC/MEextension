@@ -70,6 +70,8 @@ async function extract(pageId, endPage, typeArg) {
     const isElemOverRight = (elem) => LR(elem).right > window.innerWidth;
 
     do {
+        // contents exists in this page
+        const contents = document.getElementById("contents") || document.body;
         if (isElemOverLeft(container)) contents.dispatchEvent(evtWheeledDown);
         if (isElemOverRight(container)) contents.dispatchEvent(evtWheeledUp);
         // console.log(`Wheeled ${isElemOverLeft(container) ? "Down" : "Up"}`);
@@ -90,6 +92,8 @@ async function getWheelEventTypeArg() {
     const evtWheeledDown = new WheelEvent("wheel", { deltaY: 100, view: window, bubbles: true });
     const watchElem = document.getElementById("content-p1");
     const styleBefore = watchElem.getAttribute("style");
+    // contents exists in this page
+    const contents = document.getElementById("contents") || document.body;
     contents.dispatchEvent(evtWheeledDown);
     await timeout(700);
     const styleAfter = watchElem.getAttribute("style");

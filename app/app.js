@@ -115,7 +115,7 @@ export default function App() {
                                     />
                                 </div>
                                 <div className="row-start-2 row-end-3 col-start-1 col-end-2 flex flex-col">
-                                    <Label htmlFor="zip-name">シップ　名</Label>
+                                    <Label htmlFor="zip-name">シップ 名</Label>
                                     <Input
                                         name="zip-name"
                                         type="text"
@@ -124,7 +124,7 @@ export default function App() {
                                     />
                                 </div>
                                 <div className="row-start-2 row-end-3 col-start-2 col-end-3 flex flex-col">
-                                    <Label htmlFor="page-name">ページ　名</Label>
+                                    <Label htmlFor="page-name">ページ 名</Label>
                                     <Input
                                         name="page-name"
                                         type="text"

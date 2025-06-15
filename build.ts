@@ -114,24 +114,17 @@ if (existsSync(handlersDir)) {
   console.log(`🔧 Built ${handlers.length} handlers`);
 }
 
-// Process CSS with Tailwind v4
+// Process CSS with Tailwind v3 (stable)
 if (existsSync('./tailwind.config.js') && existsSync('./static/index.css')) {
   console.log('🎨 Processing Tailwind CSS...');
   
   try {
-    // Use Tailwind v4 CLI
-    await Bun.$`bunx @tailwindcss/cli@next -i ./static/index.css -o ./build/index.css ${process.env.NODE_ENV === 'production' ? '--minify' : ''}`;
+    // Use stable Tailwind v3
+    await Bun.$`bunx tailwindcss -i ./static/index.css -o ./build/index.css ${process.env.NODE_ENV === 'production' ? '--minify' : ''}`;
     console.log('✅ Tailwind CSS processed');
   } catch (error) {
-    console.warn('⚠️  Tailwind v4 processing failed, trying fallback...');
-    try {
-      // Fallback to regular tailwindcss
-      await Bun.$`bunx tailwindcss -i ./static/index.css -o ./build/index.css ${process.env.NODE_ENV === 'production' ? '--minify' : ''}`;
-      console.log('✅ Tailwind CSS processed with fallback');
-    } catch (fallbackError) {
-      console.warn('⚠️  All Tailwind processing failed, copying CSS as-is');
-      copyFileSync('./static/index.css', './build/index.css');
-    }
+    console.warn('⚠️  Tailwind processing failed, copying CSS as-is');
+    copyFileSync('./static/index.css', './build/index.css');
   }
 }
 

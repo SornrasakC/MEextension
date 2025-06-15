@@ -7,7 +7,7 @@ export function setListener(
   callback: (message: ProgressMessage) => void
 ): void {
   chrome.runtime.onMessage.addListener(
-    (message: ChromeMessage, sender, sendResponse) => {
+    (message: ChromeMessage, _sender, _sendResponse) => {
       if (message.type === 'PROGRESS_UPDATE') {
         callback(message.data as ProgressMessage);
       }

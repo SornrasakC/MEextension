@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import {
   FRONT_STATE,
-  type FrontState,
   type FrontStateActions,
 } from '../types';
 

@@ -29,7 +29,7 @@ import {
 } from '../types';
 import { useFrontState } from '../hooks/useFrontState';
 
-async function kaishi(
+async function _kaishi(
   reader: READERS,
   zipName: string,
   pageName: string
@@ -50,13 +50,13 @@ export default function App(): JSX.Element {
   const [_, action] = useFrontState();
   const [reader, setReader] = useState<READERS>(readerOptions[0].key);
 
-  const [meta, setMeta] = useReducer(unpackReducer<MetaState>, {
+  const [meta, _setMeta] = useReducer(unpackReducer<MetaState>, {
     chapter: 0,
     title: 'KoibitoMuriMuri',
     filenamePrefix: 'KoibitoMuriMuri Ch.0',
   });
 
-  const [pageRanges, setPageRanges] = useReducer(unpackReducer<PageRangesState>, {
+  const [_pageRanges, _setPageRanges] = useReducer(unpackReducer<PageRangesState>, {
     startPage: 0,
     endPage: 60,
   });
@@ -143,7 +143,7 @@ export default function App(): JSX.Element {
                 />
               </div>
               <div className="row-start-2 row-end-3 col-start-1 col-end-2 flex flex-col">
-                <Label htmlFor="zip-name">シップ　名</Label>
+                <Label htmlFor="zip-name">シップ 名</Label>
                 <Input
                   name="zip-name"
                   type="text"
@@ -152,7 +152,7 @@ export default function App(): JSX.Element {
                 />
               </div>
               <div className="row-start-2 row-end-3 col-start-2 col-end-3 flex flex-col">
-                <Label htmlFor="page-name">ページ　名</Label>
+                <Label htmlFor="page-name">ページ 名</Label>
                 <Input
                   name="page-name"
                   type="text"

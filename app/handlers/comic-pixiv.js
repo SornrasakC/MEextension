@@ -1,8 +1,7 @@
-import domtoimage from "dom-to-image";
 import axios from "axios";
 
-import { timeout, zipAndDownload, getFirstNumberOfEngOrJap, zeroPad } from "../utils/utils";
-import { getConnName } from "../utils/chrome/access";
+import { zipAndDownload } from "../utils/utils";
+// import { getConnName } from "../utils/chrome/access"; // Not used in this handler
 import { PROGRESS_STATUS } from "../utils/constants";
 import { storageGet } from "../utils/chrome/storage";
 
@@ -40,26 +39,66 @@ const FILENAME_PREFIX = `${CHAPTER} ${TITLE}`;
 // const START_PAGE = 0;
 // const END_PAGE = 60;
 
-// TODO reconnect if port disconnected
+// Port management
+let port = null;
+let connName = null;
+
+function createPort() {
+  if (port) {
+    try {
+      port.disconnect();
+    } catch (_e) {
+      // Port already disconnected
+    }
+  }
+  
+  port = chrome.runtime.connect({ name: connName });
+  
+  port.onDisconnect.addListener(() => {
+    console.log("Port disconnected, will reconnect on next message");
+    port = null;
+  });
+  
+  return port;
+}
+
+function safePostMessage(message) {
+  try {
+    if (!port || port.name === undefined) {
+      port = createPort();
+    }
+    port.postMessage(message);
+  } catch (_error) {
+    console.log("Port disconnected, attempting to reconnect...");
+    port = createPort();
+    try {
+      port.postMessage(message);
+    } catch (retryError) {
+      console.error("Failed to send message after reconnection:", retryError);
+    }
+  }
+}
 
 async function main() {
-    const { ["me-conn-name"]: connName } = await storageGet("me-conn-name");
-    const port = chrome.runtime.connect({ name: connName });
+    const { ["me-conn-name"]: storedConnName } = await storageGet("me-conn-name");
+    connName = storedConnName;
+    
+    port = createPort();
 
     console.log(`Start extract on: ${FILENAME_PREFIX}`);
-    port.postMessage({ status: PROGRESS_STATUS.READING });
+    safePostMessage({ status: PROGRESS_STATUS.READING });
 
     const pageNodes = [...document.querySelectorAll('[style*="background-image:"]')];
     // node.style.backgroundImage == 'url("https://public-img-comic.pximg.net/c!/a=1,w=720,h=1024,b=FFFFFF,lg=7,lxr=0.05,lyr=0.05,l=c%2521%252Fa%253D0%252Cw%253D270%252Fimages%252Fborder_logo.png/images/blank.png")'
     const urls = pageNodes.map(node => node.style.backgroundImage.split('"')[1]);
 
     const dataUrls = await urlsToDataUrls(urls);
-    port.postMessage({ status: PROGRESS_STATUS.FINALIZING });
+    safePostMessage({ status: PROGRESS_STATUS.FINALIZING });
 
     zipAndDownload(
         dataUrls,
         { FILENAME_PREFIX, CHAPTER },
-        (() => port.postMessage({ status: PROGRESS_STATUS.FINISHED })).bind(port)
+        () => safePostMessage({ status: PROGRESS_STATUS.FINISHED })
     );
 }
 
