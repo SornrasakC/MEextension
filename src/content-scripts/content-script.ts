@@ -18,54 +18,24 @@ function createOverlay(): void {
 
   // Create header for dragging
   const header = document.createElement('div');
-  header.style.cssText = `
-    position: relative;
-    height: 32px;
-    background: rgba(0, 0, 0, 0.8);
-    cursor: move;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 12px;
-    border-radius: 8px 8px 0 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  `;
+  header.className = 'overlay-header';
 
   // Create title
   const title = document.createElement('span');
   title.textContent = 'Manga Extractor';
-  title.style.cssText = `
-    color: white;
-    font-weight: 600;
-    font-size: 12px;
-    pointer-events: none;
-  `;
+  title.className = 'overlay-title';
 
   // Create close button
   const closeButton = document.createElement('button');
   closeButton.innerHTML = 'x';
-  closeButton.style.cssText = `
-    background: none;
-    border: none;
-    color: white;
-    font-size: 16px;
-    cursor: pointer;
-    padding: 0;
-    width: 20px;
-    height: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 3px;
-    transition: background-color 0.2s;
-  `;
+  closeButton.className = 'overlay-close-btn';
 
   closeButton.addEventListener('mouseenter', () => {
-    closeButton.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+    closeButton.classList.add('overlay-close-btn-hover');
   });
 
   closeButton.addEventListener('mouseleave', () => {
-    closeButton.style.backgroundColor = 'transparent';
+    closeButton.classList.remove('overlay-close-btn-hover');
   });
 
   closeButton.addEventListener('click', hideOverlay);
@@ -76,12 +46,21 @@ function createOverlay(): void {
   // Create iframe
   overlayIframe = document.createElement('iframe');
   overlayIframe.src = chrome.runtime.getURL('index.html');
+  overlayIframe.className = 'overlay-iframe';
+
+  // Create resize handle
+  const resizeHandle = document.createElement('div');
+  resizeHandle.className = 'overlay-resize-handle';
 
   overlayContainer.appendChild(header);
   overlayContainer.appendChild(overlayIframe);
+  overlayContainer.appendChild(resizeHandle);
 
   // Make draggable
   makeDraggable(overlayContainer, header);
+  
+  // Make resizable
+  makeResizable(overlayContainer, resizeHandle);
 
   // Append to body
   document.body.appendChild(overlayContainer);
@@ -160,6 +139,64 @@ function startZipDownload(): void {
       }, '*');
     }
   }, 1500);
+}
+
+// Make element resizable
+function makeResizable(element: HTMLElement, handle: HTMLElement): void {
+  let isResizing = false;
+  let startX = 0;
+  let startY = 0;
+  let startWidth = 0;
+  let startHeight = 0;
+
+  handle.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    e.stopPropagation(); // Prevent triggering drag
+    isResizing = true;
+    
+    startX = e.clientX;
+    startY = e.clientY;
+    startWidth = parseInt(window.getComputedStyle(element, null).getPropertyValue('width'));
+    startHeight = parseInt(window.getComputedStyle(element, null).getPropertyValue('height'));
+    
+    document.addEventListener('mousemove', resize);
+    document.addEventListener('mouseup', stopResize);
+  });
+
+  function resize(e: MouseEvent): void {
+    if (!isResizing) return;
+    
+    e.preventDefault();
+    
+    const newWidth = startWidth + (e.clientX - startX);
+    const newHeight = startHeight + (e.clientY - startY);
+    
+    // Apply minimum and maximum constraints
+    const minWidth = 350;
+    const minHeight = 680;
+    const maxWidth = window.innerWidth - parseInt(element.style.left || '0');
+    const maxHeight = window.innerHeight - parseInt(element.style.top || '0');
+    
+    const constrainedWidth = Math.max(minWidth, Math.min(newWidth, maxWidth));
+    const constrainedHeight = Math.max(minHeight, Math.min(newHeight, maxHeight));
+    
+    // Update container dimensions
+    element.style.width = constrainedWidth + 'px';
+    element.style.height = constrainedHeight + 'px';
+    
+    // Update iframe dimensions (it will automatically resize due to CSS calc)
+    if (overlayIframe) {
+      // overlayIframe.style.height = `calc(${constrainedHeight}px - 32px)`;
+      overlayIframe.style.height = `${constrainedHeight}px`;
+      overlayIframe.style.width = `${constrainedWidth}px`;
+    }
+  }
+
+  function stopResize(): void {
+    isResizing = false;
+    document.removeEventListener('mousemove', resize);
+    document.removeEventListener('mouseup', stopResize);
+  }
 }
 
 // Make element draggable

@@ -3,16 +3,21 @@
 #manga-extractor-overlay {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
   color-scheme: light dark;
-  position: fixed;
+  position: fixed !important;
   z-index: 2147483647 !important;
-  top: 20px;
-  left: 20px;
+  top: 50px;
+  left: 50px;
+  width: 350px;
+  height: 680px;
   display: none;
-  min-width: 350px !important;
-  min-height: 580px !important;
-  background: rgba(0, 0, 0, 0.6);
+  min-width: 300px !important;
+  min-height: 200px !important;
+  background: white !important;
   border-radius: 8px !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+  overflow: hidden !important;
+  pointer-events: auto;
+  transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
 #manga-extractor-overlay * {
@@ -20,16 +25,76 @@
   position: relative;
 }
 
-/* Ensure overlay doesn't interfere with page content */
-#manga-extractor-overlay {
-  pointer-events: auto;
+/* Overlay header */
+.overlay-header {
+  position: relative !important;
+  height: 32px !important;
+  background: rgba(0, 0, 0, 0.8) !important;
+  cursor: move !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 0 12px !important;
+  border-radius: 8px 8px 0 0 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
-#manga-extractor-overlay iframe {
-  pointer-events: auto;
-  z-index: 2147483647 !important;
-  height: 580px;
+/* Overlay title */
+.overlay-title {
+  color: white !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  pointer-events: none !important;
+}
+
+/* Close button */
+.overlay-close-btn {
+  background: none !important;
+  border: none !important;
+  color: white !important;
+  font-size: 16px !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  width: 20px !important;
+  height: 20px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 3px !important;
+  transition: background-color 0.2s !important;
+}
+
+.overlay-close-btn-hover {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Iframe */
+.overlay-iframe {
   width: 350px;
+  height: 680px;
+  border: none !important;
+  display: block !important;
+  pointer-events: auto;
+  z-index: 20000 !important;
+  overflow: hidden;
+  border-radius: 0 0 8px 8px;
+}
+
+/* Resize handle */
+.overlay-resize-handle {
+  position: absolute !important;
+  bottom: 0 !important;
+  right: 0 !important;
+  width: 20px !important;
+  height: 20px !important;
+  background: linear-gradient(-45deg, transparent 30%, rgba(0, 0, 0, 0.3) 30%, rgba(0, 0, 0, 0.3) 40%, transparent 40%, transparent 60%, rgba(0, 0, 0, 0.3) 60%, rgba(0, 0, 0, 0.3) 70%, transparent 70%) !important;
+  cursor: nw-resize !important;
+  z-index: 20500 !important;
+  border-bottom-right-radius: 8px !important;
 }
 
 /* Fix dropdown and modal z-index issues within iframe */
@@ -76,23 +141,15 @@
   }
 } */
 
-/* Prevent text selection on drag handle */
-#manga-extractor-overlay .drag-handle {
-  user-select: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
+/* Animation for show/hide */
+#manga-extractor-overlay[style*="display: none"] {
+  opacity: 0;
+  transform: scale(0.95);
 }
 
-/* Smooth transitions */
-#manga-extractor-overlay {
-  transition: opacity 0.2s ease-in-out;
-}
-
-/* Ensure iframe content is properly contained */
-#manga-extractor-overlay iframe {
-  overflow: hidden;
-  border-radius: 0 0 12px 12px;
+#manga-extractor-overlay[style*="display: block"] {
+  opacity: 1;
+  transform: scale(1);
 }
 
 /* Reset any inherited styles that might cause conflicts */
@@ -108,19 +165,4 @@
   text-decoration: none;
   list-style: none;
   outline: none;
-}
-
-/* Animation for show/hide */
-#manga-extractor-overlay {
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
-
-#manga-extractor-overlay[style*="display: none"] {
-  opacity: 0;
-  transform: scale(0.95);
-}
-
-#manga-extractor-overlay[style*="display: block"] {
-  opacity: 1;
-  transform: scale(1);
 } 
