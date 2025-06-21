@@ -15,7 +15,7 @@ import bgImage from '../../static/assets/bg.png';
 import ReaderSelector from '../components/ReaderSelector';
 import Label from '../components/Label';
 import Tsumugi from '../components/Tsumugi';
-import Input from '../components/Input';
+// import Input from '../components/Input';
 import Title from '../components/Title';
 import Dialog from '../components/Dialog';
 
@@ -141,7 +141,7 @@ export default function App(): JSX.Element {
                   options={readerOptions}
                 />
               </div>
-              <div className="row-start-2 row-end-3 col-start-1 col-end-2 flex flex-col">
+              {/* <div className="row-start-2 row-end-3 col-start-1 col-end-2 flex flex-col">
                 <Label htmlFor="zip-name">シップ 名</Label>
                 <Input
                   name="zip-name"
@@ -158,7 +158,7 @@ export default function App(): JSX.Element {
                   placeholder="{Chapter}-{PageNum}"
                   className="px-1 rounded-sm focus:outline-none"
                 />
-              </div>
+              </div> */}
             </div>
           </section>
 
