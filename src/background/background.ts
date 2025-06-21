@@ -71,4 +71,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log('Content script ready on tab:', sender.tab?.id);
     sendResponse({ success: true });
   }
-}); 
+});
+
+chrome.commands.onCommand.addListener(cmd => {
+  if (cmd === 'reload-me') chrome.runtime.reload();
+});
