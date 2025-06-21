@@ -17,25 +17,20 @@
     },
     "content_scripts": [
         {
-            "matches": [
-                "*://comic-walker.com/*",
-                "*://*.comic-walker.com/*",
-                "*://www.pixiv.net/artworks/*",
-                "*://*.nicovideo.jp/*",
-                "*://read.amazon.com/*",
-                "*://*.amazon.com/*/reader/*",
-                "*://comicbushi.com/*",
-                "*://*.comicbushi.com/*"
-            ],
+            "matches": ["<all_urls>"],
             "js": ["content-script.js"],
             "css": ["content-overlay.css"],
             "run_at": "document_end"
         }
     ],
     "permissions": ["activeTab", "scripting", "tabs", "storage"],
+    "host_permissions": ["<all_urls>"],
     "web_accessible_resources": [
         {
             "resources": [
+                "index.html",
+                "index.js",
+                "index.css",
                 "overlay.html",
                 "overlay.js",
                 "content-script.js",

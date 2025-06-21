@@ -1,11 +1,13 @@
 // Background script for Manga Extractor
 // Handles overlay toggle when extension icon is clicked
 
+/// <reference lib="dom" />
+
 chrome.action.onClicked.addListener(async (tab) => {
   try {
     // First, try to send message to existing content script
     await chrome.tabs.sendMessage(tab.id!, { action: 'toggleOverlay' });
-  } catch (error) {
+  } catch (_error) {
     console.log('Content script not found, injecting...');
     
     // If content script is not loaded, inject it
@@ -48,7 +50,7 @@ chrome.action.onClicked.addListener(async (tab) => {
         await chrome.scripting.executeScript({
           target: { tabId: tab.id! },
           func: () => {
-            alert('Manga Extractor: This page is not supported or content script injection failed. Please try refreshing the page.');
+            window.alert('Manga Extractor: This page is not supported or content script injection failed. Please try refreshing the page.');
           }
         });
       } catch (alertError) {

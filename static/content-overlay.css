@@ -1,11 +1,18 @@
 /* Content overlay styles for Manga Extractor */
 
 #manga-extractor-overlay {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
   color-scheme: light dark;
-  all: initial !important;
-  position: fixed !important;
+  position: fixed;
   z-index: 2147483647 !important;
+  top: 20px;
+  left: 20px;
+  display: none;
+  min-width: 350px !important;
+  min-height: 580px !important;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 8px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
 }
 
 #manga-extractor-overlay * {
@@ -21,6 +28,8 @@
 #manga-extractor-overlay iframe {
   pointer-events: auto;
   z-index: 2147483647 !important;
+  height: 580px;
+  width: 350px;
 }
 
 /* Fix dropdown and modal z-index issues within iframe */
@@ -49,7 +58,7 @@
   z-index: 999999 !important;
 }
 
-/* Responsive adjustments */
+/* Responsive adjustments
 @media (max-width: 768px) {
   #manga-extractor-overlay {
     width: 90vw !important;
@@ -65,7 +74,7 @@
     height: 95vh !important;
     top: 2.5vh !important;
   }
-}
+} */
 
 /* Prevent text selection on drag handle */
 #manga-extractor-overlay .drag-handle {

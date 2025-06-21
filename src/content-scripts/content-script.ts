@@ -1,7 +1,10 @@
 // Content script for Manga Extractor
 // Injects and manages the extension overlay on supported manga reader sites
 
+/// <reference lib="dom" />
+
 let overlayContainer: HTMLElement | null = null;
+// eslint-disable-next-line no-undef
 let overlayIframe: HTMLIFrameElement | null = null;
 let isOverlayVisible = false;
 
@@ -12,25 +15,6 @@ function createOverlay(): void {
   // Create container
   overlayContainer = document.createElement('div');
   overlayContainer.id = 'manga-extractor-overlay';
-  overlayContainer.style.cssText = `
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    width: 320px;
-    height: 480px;
-    z-index: 2147483647;
-    background: rgba(0, 0, 0, 0.9);
-    border-radius: 8px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    display: none;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    overflow: hidden;
-    min-width: 280px;
-    min-height: 400px;
-    max-width: 400px;
-    max-height: 600px;
-  `;
 
   // Create header for dragging
   const header = document.createElement('div');
@@ -59,7 +43,7 @@ function createOverlay(): void {
 
   // Create close button
   const closeButton = document.createElement('button');
-  closeButton.innerHTML = '×';
+  closeButton.innerHTML = 'x';
   closeButton.style.cssText = `
     background: none;
     border: none;
@@ -91,13 +75,7 @@ function createOverlay(): void {
 
   // Create iframe
   overlayIframe = document.createElement('iframe');
-  overlayIframe.src = chrome.runtime.getURL('overlay.html');
-  overlayIframe.style.cssText = `
-    width: 100%;
-    height: calc(100% - 32px);
-    border: none;
-    background: transparent;
-  `;
+  overlayIframe.src = chrome.runtime.getURL('index.html');
 
   overlayContainer.appendChild(header);
   overlayContainer.appendChild(overlayIframe);
@@ -108,9 +86,6 @@ function createOverlay(): void {
   // Append to body
   document.body.appendChild(overlayContainer);
 
-  // Inject CSS to prevent conflicts
-  injectOverlayCSS();
-
   // Listen for messages from overlay iframe
   window.addEventListener('message', handleOverlayMessage);
 
@@ -118,6 +93,7 @@ function createOverlay(): void {
 }
 
 // Handle messages from overlay iframe
+// eslint-disable-next-line no-undef
 function handleOverlayMessage(event: MessageEvent): void {
   // Only accept messages from our overlay iframe
   if (event.source !== overlayIframe?.contentWindow) return;
@@ -141,7 +117,7 @@ function handleOverlayMessage(event: MessageEvent): void {
 }
 
 // Start image extraction based on selected reader
-function startImageExtraction(reader: string, url: string): void {
+function startImageExtraction(reader: string, _url: string): void {
   // Send message to overlay with status update
   if (overlayIframe?.contentWindow) {
     overlayIframe.contentWindow.postMessage({
@@ -186,34 +162,6 @@ function startZipDownload(): void {
   }, 1500);
 }
 
-// Inject CSS to prevent conflicts with page styles
-function injectOverlayCSS(): void {
-  const style = document.createElement('style');
-  style.id = 'manga-extractor-overlay-styles';
-  style.textContent = `
-    #manga-extractor-overlay {
-      all: initial !important;
-      position: fixed !important;
-      z-index: 2147483647 !important;
-      pointer-events: auto !important;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-    }
-    
-    #manga-extractor-overlay * {
-      box-sizing: border-box !important;
-      pointer-events: auto !important;
-    }
-    
-    #manga-extractor-overlay iframe {
-      pointer-events: auto !important;
-    }
-  `;
-  
-  if (!document.getElementById('manga-extractor-overlay-styles')) {
-    document.head.appendChild(style);
-  }
-}
-
 // Make element draggable
 function makeDraggable(element: HTMLElement, handle: HTMLElement): void {
   let isDragging = false;
@@ -250,7 +198,7 @@ function makeDraggable(element: HTMLElement, handle: HTMLElement): void {
     
     element.style.left = currentX + 'px';
     element.style.top = currentY + 'px';
-    element.style.right = 'auto';
+    // console.log('Dragging overlay', currentX, currentY);
   }
 
   function stopDrag(): void {
@@ -300,7 +248,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
   } catch (error) {
     console.error('Error handling message:', error);
-    sendResponse({ success: false, error: error.message });
+    sendResponse({ success: false, error: (error as Error).message });
   }
   return true; // Keep message channel open for async response
 });
@@ -308,7 +256,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 // Notify background script that content script is ready
 function notifyReady(): void {
   try {
-    chrome.runtime.sendMessage({ action: 'contentScriptReady' }, (response) => {
+    chrome.runtime.sendMessage({ action: 'contentScriptReady' }, (_response) => {
       if (chrome.runtime.lastError) {
         console.log('Background script not ready yet:', chrome.runtime.lastError.message);
       } else {
@@ -337,30 +285,12 @@ if (document.readyState === 'loading') {
   initialize();
 }
 
-// Auto-show overlay on supported manga reader sites
-function checkAndAutoShow(): void {
-  const hostname = window.location.hostname;
-  const supportedSites = [
-    'comic-walker.com',
-    'www.pixiv.net',
-    'nicovideo.jp',
-    'read.amazon.com',
-    'comicbushi.com'
-  ];
-
-  if (supportedSites.some(site => hostname.includes(site))) {
-    // Auto-create overlay but don't show it immediately
-    createOverlay();
-    console.log(`Manga Extractor ready on ${hostname}`);
-  }
-}
-
 // Handle page navigation (for SPAs)
 let lastUrl = location.href;
 new MutationObserver(() => {
   const url = location.href;
   if (url !== lastUrl) {
     lastUrl = url;
-    checkAndAutoShow();
+    createOverlay();
   }
 }).observe(document, { subtree: true, childList: true }); 
