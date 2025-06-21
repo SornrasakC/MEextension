@@ -11,7 +11,7 @@ export default function Label({
     <label
       htmlFor={htmlFor}
       {...props}
-      className={`text-lg font-bold filter drop-shadow-seround-text ${className || ''}`}
+      className={`text-lg font-bold text-white text-shadow ${className || ''}`}
     >
       {children}
     </label>

@@ -51,8 +51,8 @@ async function buildAll() {
 
     const staticFiles = [
       'index.html',
-      'overlay.html',
       'index.css',
+      'index.js',
       'content-overlay.css',
     ];
     for (const file of staticFiles) {

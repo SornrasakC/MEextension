@@ -128,7 +128,7 @@ export default function App(): JSX.Element {
           className="relative backdrop-filter backdrop-blur-md backdrop-brightness-80 flex flex-col p-4 min-h-screen"
         >
           <section>
-            <Title>Mugyu Extractor</Title>
+            <Title className="text-shadow">Mugyu Extractor</Title>
             <div
               id="reader-select"
               className="relative grid grid-cols-2 grid-rows-2 gap-2"
