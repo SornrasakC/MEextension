@@ -10,13 +10,34 @@
         "128": "icons/tsumugi128.png"
     },
     "action": {
-        "default_title": "Manga Extractor",
-        "default_popup": "index.html"
+        "default_title": "Manga Extractor"
     },
+    "background": {
+        "service_worker": "background.js"
+    },
+    "content_scripts": [
+        {
+            "matches": [
+                "*://comic-walker.com/*",
+                "*://*.comic-walker.com/*",
+                "*://www.pixiv.net/artworks/*",
+                "*://*.nicovideo.jp/*",
+                "*://read.amazon.com/*",
+                "*://*.amazon.com/*/reader/*",
+                "*://comicbushi.com/*",
+                "*://*.comicbushi.com/*"
+            ],
+            "js": ["content-script.js"],
+            "css": ["content-overlay.css"],
+            "run_at": "document_end"
+        }
+    ],
     "permissions": ["activeTab", "scripting", "tabs", "storage"],
     "web_accessible_resources": [
         {
             "resources": [
+                "overlay.html",
+                "overlay.js",
                 "content-script.js",
                 "content-script.js.map",
                 "handlers/nico-douga.js",

@@ -51,9 +51,19 @@ if (existsSync(STATIC_DIR)) {
     copyFileSync(join(STATIC_DIR, 'index.html'), join(BUILD_DIR, 'index.html'));
   }
   
+  // Copy overlay HTML
+  if (existsSync(join(STATIC_DIR, 'overlay.html'))) {
+    copyFileSync(join(STATIC_DIR, 'overlay.html'), join(BUILD_DIR, 'overlay.html'));
+  }
+  
   // Copy CSS (will be processed by Tailwind later)
   if (existsSync(join(STATIC_DIR, 'index.css'))) {
     copyFileSync(join(STATIC_DIR, 'index.css'), join(BUILD_DIR, 'index.css'));
+  }
+  
+  // Copy content overlay CSS
+  if (existsSync(join(STATIC_DIR, 'content-overlay.css'))) {
+    copyFileSync(join(STATIC_DIR, 'content-overlay.css'), join(BUILD_DIR, 'content-overlay.css'));
   }
 }
 
@@ -73,17 +83,49 @@ await Bun.build({
 
 console.log('⚛️  Built React popup app');
 
-// Build content script
-if (existsSync('./app/content-scripts/content-script.js')) {
+// Build background script
+if (existsSync('./src/background/background.ts')) {
   await Bun.build({
-    entrypoints: ['./app/content-scripts/content-script.js'],
+    entrypoints: ['./src/background/background.ts'],
+    outdir: BUILD_DIR,
+    target: 'browser',
+    format: 'esm',
+    minify: process.env.NODE_ENV === 'production',
+    sourcemap: 'external',
+    external: ['chrome'],
+    naming: '[name].[ext]'
+  });
+  
+  console.log('🔧 Built background script');
+}
+
+// Build overlay script
+if (existsSync('./static/overlay.js')) {
+  await Bun.build({
+    entrypoints: ['./static/overlay.js'],
+    outdir: BUILD_DIR,
+    target: 'browser',
+    format: 'esm',
+    minify: process.env.NODE_ENV === 'production',
+    sourcemap: 'external',
+    external: ['chrome'],
+    naming: '[name].[ext]'
+  });
+  
+  console.log('🎨 Built overlay script');
+}
+
+// Build content script
+if (existsSync('./src/content-scripts/content-script.ts')) {
+  await Bun.build({
+    entrypoints: ['./src/content-scripts/content-script.ts'],
     outdir: BUILD_DIR,
     target: 'browser',
     format: 'iife',
     minify: process.env.NODE_ENV === 'production',
     sourcemap: 'external',
     external: ['chrome'],
-    naming: '[dir]/[name].[ext]'
+    naming: '[name].[ext]'
   });
   
   console.log('📄 Built content script');

@@ -125,8 +125,7 @@ export default function App(): JSX.Element {
     >
       <form onSubmit={handleSubmit}>
         <div
-          style={{ height: '650px' }}
-          className="relative backdrop-filter backdrop-blur-md backdrop-brightness-80 flex flex-col p-4"
+          className="relative backdrop-filter backdrop-blur-md backdrop-brightness-80 flex flex-col p-4 min-h-screen"
         >
           <section>
             <Title>Mugyu Extractor</Title>
