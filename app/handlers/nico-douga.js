@@ -1,7 +1,7 @@
 import domtoimage from "dom-to-image";
 
 import { timeout, zipAndDownload } from "../utils/utils";
-import { getConnName } from "../utils/chrome/access";
+// import { getConnName } from "../utils/chrome/access"; // Not used in this handler
 import { PROGRESS_STATUS } from "../utils/constants";
 import { storageGet } from "../utils/chrome/storage";
 
@@ -17,24 +17,62 @@ const RAW_CHAPTER =
   document.getElementsByClassName("episode_title")[0].textContent;
 const FILENAME_PREFIX = `${RAW_CHAPTER} ${TITLE}`;
 
-// TODO reconnect if port disconnected
+// Port management
+let port = null;
+let connName = null;
+
+function createPort() {
+  if (port) {
+    try {
+      port.disconnect();
+    } catch (_e) {
+      // Port already disconnected
+    }
+  }
+  
+  port = chrome.runtime.connect({ name: connName });
+  
+  port.onDisconnect.addListener(() => {
+    console.log("Port disconnected, will reconnect on next message");
+    port = null;
+  });
+  
+  return port;
+}
+
+function safePostMessage(message) {
+  try {
+    if (!port || port.name === undefined) {
+      port = createPort();
+    }
+    port.postMessage(message);
+  } catch (_error) {
+    console.log("Port disconnected, attempting to reconnect...");
+    port = createPort();
+    try {
+      port.postMessage(message);
+    } catch (retryError) {
+      console.error("Failed to send message after reconnection:", retryError);
+    }
+  }
+}
 
 async function main() {
-
-  const { ["me-conn-name"]: connName } = await storageGet("me-conn-name");
-
-  const port = chrome.runtime.connect({ name: connName });
+  const { ["me-conn-name"]: storedConnName } = await storageGet("me-conn-name");
+  connName = storedConnName;
+  
+  port = createPort();
 
   console.log(`Start extract on: ${FILENAME_PREFIX}`);
-  port.postMessage({ status: PROGRESS_STATUS.READING });
+  safePostMessage({ status: PROGRESS_STATUS.READING });
 
   const dataUrls = await extract(START_PAGE, END_PAGE);
-  port.postMessage({ status: PROGRESS_STATUS.FINALIZING });
+  safePostMessage({ status: PROGRESS_STATUS.FINALIZING });
 
   zipAndDownload(
     dataUrls,
     { FILENAME_PREFIX, CHAPTER: RAW_CHAPTER },
-    (() => port.postMessage({ status: PROGRESS_STATUS.FINISHED })).bind(port)
+    () => safePostMessage({ status: PROGRESS_STATUS.FINISHED })
   );
 }
 

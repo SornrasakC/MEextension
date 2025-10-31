@@ -2,21 +2,45 @@
     "manifest_version": 3,
     "name": "Manga Extractor",
     "short_name": "MEext",
-    "version": "2.0.0",
+    "version": "3.0.0",
     "description": "Various tools for extracting manga from various site / reader.",
     "icons": {
-        "16": "icons/ghost16.png",
-        "48": "icons/ghost48.png",
-        "128": "icons/ghost128.png"
+        "16": "icons/tsumugi16.png",
+        "48": "icons/tsumugi48.png",
+        "128": "icons/tsumugi128.png"
     },
     "action": {
-        "default_title": "Chrome Extension Boilerplate",
-        "default_popup": "index.html"
+        "default_title": "Manga Extractor"
     },
+    "background": {
+        "service_worker": "background.js"
+    },
+    "commands": {
+        "reload-me": {
+            "suggested_key": {
+                "default": "Ctrl+R"
+            },
+            "description": "Reload Manga Extractor"
+        }
+    },
+    "content_scripts": [
+        {
+            "matches": ["<all_urls>"],
+            "js": ["content-script.js"],
+            "css": ["content-overlay.css"],
+            "run_at": "document_end"
+        }
+    ],
     "permissions": ["activeTab", "scripting", "tabs", "storage"],
+    "host_permissions": ["<all_urls>"],
     "web_accessible_resources": [
         {
             "resources": [
+                "index.html",
+                "index.js",
+                "index.css",
+                "overlay.html",
+                "overlay.js",
                 "content-script.js",
                 "content-script.js.map",
                 "handlers/nico-douga.js",
@@ -35,4 +59,5 @@
             "matches": ["<all_urls>"]
         }
     ]
+    
 }
