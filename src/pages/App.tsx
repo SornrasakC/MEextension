@@ -6,6 +6,7 @@ import {
   executeComicPixivScript,
   executeKindleScript,
   executeComicbushiScript,
+  executeTakecomicScript,
 } from '../services/handlers';
 import { unpackReducer } from '../utils/reducers';
 import { storageSet } from '../utils/chrome/storage';
@@ -44,6 +45,7 @@ const readerOptions: ReaderOption[] = [
   { key: READERS.COMIC_PIXIV, value: READERS.COMIC_PIXIV },
   { key: READERS.KINDLE, value: READERS.KINDLE },
   { key: READERS.COMICBUSHI, value: READERS.COMICBUSHI },
+  { key: READERS.TAKECOMIC, value: READERS.TAKECOMIC },
 ];
 
 export default function App(): JSX.Element {
@@ -104,6 +106,9 @@ export default function App(): JSX.Element {
         break;
       case READERS.COMICBUSHI:
         executeComicbushiScript();
+        break;
+      case READERS.TAKECOMIC:
+        executeTakecomicScript();
         break;
       default:
         return;

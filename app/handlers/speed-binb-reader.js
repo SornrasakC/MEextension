@@ -2,9 +2,14 @@ import domtoimage from "dom-to-image";
 
 import { timeout, zipAndDownload } from "../utils/utils";
 
+// ⚠️ NOTE: Takeshobo sites (gammaplus.takeshobo.co.jp, storia.takeshobo.co.jp) 
+// have migrated to takecomic.jp which uses a different viewer (Comici).
+// Use the 'Takecomic (Comici)' reader option for those sites instead.
+//
 // window.location.href
-// 'https://gammaplus.takeshobo.co.jp/manga/yumedefurarete/_files/01/'
-// 'https://storia.takeshobo.co.jp/_files/himegimi/33/'
+// OLD: 'https://gammaplus.takeshobo.co.jp/manga/yumedefurarete/_files/01/'
+// OLD: 'https://storia.takeshobo.co.jp/_files/himegimi/33/'
+// NEW: 'https://takecomic.jp/episodes/{episodeHash}'
 // const CHAPTER = window.location.href.split("/")[6];
 // const TITLE = window.location.href.split("/")[4];
 

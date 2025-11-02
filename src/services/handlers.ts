@@ -40,4 +40,11 @@ export async function executeKindleScript(): Promise<void> {
  */
 export async function executeComicbushiScript(): Promise<void> {
   return executeScriptInActiveTab('handlers/comicbushi.js');
+}
+
+/**
+ * Execute Takecomic script
+ */
+export async function executeTakecomicScript(): Promise<void> {
+  return executeScriptInActiveTab('handlers/takecomic.js');
 } 

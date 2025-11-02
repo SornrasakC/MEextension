@@ -6,6 +6,7 @@ export enum READERS {
   COMIC_PIXIV = 'Comic-pixiv',
   KINDLE = 'Kindle',
   COMICBUSHI = 'Comicbushi (CORS blocked)',
+  TAKECOMIC = 'Takecomic (Comici)',
 }
 
 export enum PROGRESS_STATUS {
