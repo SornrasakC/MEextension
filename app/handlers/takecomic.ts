@@ -1,334 +1,497 @@
-import axios from "axios";
-import { zipAndDownload } from "../utils/utils";
-import { PROGRESS_STATUS } from "../utils/constants";
-import { storageGet } from "../utils/chrome/storage";
+import { timeout, zipAndDownload } from "../utils/utils";
 
-interface PageInfo {
-    imageUrl: string;
-    scramble: string; // JSON array as string
-    sort: number;
-    width: number;
-    height: number;
-    expiresOn: number;
-}
-
-interface ContentsResponse {
+type ContentsInfo = {
     totalPages: number;
-    scrollDirection: string;
-    spreadDesignation: number;
-    result: PageInfo[];
-}
+    result: Array<PagePayload>;
+};
 
-// Extract metadata from page
-function extractMetadata() {
-    const title = document.querySelector('h1')?.textContent?.trim() || 
-                  document.querySelector('[property="og:title"]')?.getAttribute('content') || 
-                  "Unknown Title";
-    
-    // Try to extract chapter/episode number
-    const chapterMatch = title.match(/(\d+)話/) || title.match(/第(\d+)話/) || title.match(/(\d+)/);
-    const chapter = chapterMatch ? chapterMatch[1] : "0";
-    
-    // Clean title - remove chapter info
-    const cleanTitle = title.replace(/・\d+話/, '').replace(/第\d+話/, '').trim();
-    
-    return {
-        TITLE: cleanTitle,
-        CHAPTER: chapter,
-        FILENAME_PREFIX: `第${chapter}話 ${cleanTitle}`
-    };
-}
+type PagePayload = {
+    imageUrl: string;
+    scramble?: string | number[];
+    sort?: number;
+    width?: number;
+    height?: number;
+};
 
-// Extract comici-viewer-id from page
-function extractViewerId(): string | null {
-    console.log('Starting viewerId extraction...');
-    
-    // Method 1: Check window.__NEXT_DATA__ (Next.js apps store data here)
+type PageCapture = { pageId: number; dataUrl: string };
+
+const FALLBACK_PATTERN = [11, 6, 1, 8, 14, 7, 0, 4, 9, 15, 13, 10, 12, 5, 2, 3];
+const TILES_PER_SIDE = 4; // Preferred grid (4x4)
+
+async function main() {
+    console.log("Takecomic (Comici) handler starting with API descrambler...");
+
+    const metadata = extractMetadata();
+    const viewerId = extractViewerId();
+
+    if (!viewerId) {
+        alert(
+            'Could not locate the Comici viewer ID.\nPlease open a chapter and ensure the reader is fully loaded (button "開いて読む").'
+        );
+        return;
+    }
+
     try {
-        const nextData = (window as any).__NEXT_DATA__;
-        if (nextData) {
-            console.log('Found __NEXT_DATA__, searching for viewerId...');
-            const jsonStr = JSON.stringify(nextData);
-            const match = jsonStr.match(/"viewerId"\s*:\s*"([a-f0-9]{32,})"/i);
+        const contents = await fetchContentsInfo(viewerId);
+        const pagesMeta = (contents?.result || []).slice().sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0));
+
+        if (pagesMeta.length === 0) {
+            alert("Could not find any pages in the API response. Please reload the viewer and try again.");
+            return;
+        }
+
+        console.log(`Found ${pagesMeta.length} pages from API. Downloading & descrambling...`);
+
+        const captures: PageCapture[] = [];
+        for (let i = 0; i < pagesMeta.length; i++) {
+            const pageNumber = i + 1;
+            const meta = pagesMeta[i];
+
+            console.log(`→ Processing page ${pageNumber}/${pagesMeta.length}`);
+            try {
+                const capture = await downloadAndDescramble(meta, pageNumber, viewerId);
+                if (capture) {
+                    captures.push(capture);
+                } else {
+                    console.warn(`✗ Skipped page ${pageNumber}: no data returned`);
+                }
+            } catch (error) {
+                console.error(`✗ Failed to process page ${pageNumber}`, error);
+            }
+
+            // Gentle pacing to avoid flooding the API
+            await timeout(50);
+        }
+
+        if (captures.length === 0) {
+            alert("Failed to process any pages. Check console logs for details.");
+            return;
+        }
+
+        console.log(`✓ Successfully processed ${captures.length} pages. Creating ZIP...`);
+        zipAndDownload(captures, { FILENAME_PREFIX: metadata.title, CHAPTER: metadata.chapter });
+    } catch (error) {
+        console.error("Takecomic handler failed:", error);
+        alert("Failed to process Takecomic chapter. Check console for details.");
+    }
+}
+
+function extractMetadata(): { title: string; chapter: string } {
+    let title = "unknown";
+    let chapter = "01";
+
+    const titleElement =
+        document.querySelector("h1") ||
+        document.querySelector('[class*="title"]') ||
+        document.querySelector('[class*="episode"]') ||
+        document.querySelector("title");
+
+    if (titleElement?.textContent) {
+        title = titleElement.textContent.trim();
+    }
+
+    const ogTitle = document.querySelector('meta[property="og:title"]')?.getAttribute("content");
+    if (ogTitle) {
+        title = ogTitle.trim();
+    }
+
+    const chapterPatterns = [
+        /第(\d+)[話巻]/,
+        /(\d+)[話巻]/,
+        /[Ee]pisode\s*(\d+)/,
+        /[Cc]hapter\s*(\d+)/,
+        /#(\d+)/,
+        /ep\.?\s*(\d+)/i,
+    ];
+
+    for (const pattern of chapterPatterns) {
+        const match = title.match(pattern);
+        if (match) {
+            chapter = match[1].padStart(2, "0");
+            break;
+        }
+    }
+
+    if (chapter === "01") {
+        const breadcrumbs = document.querySelector('[class*="breadcrumb"]');
+        const breadcrumbText = breadcrumbs?.textContent ?? "";
+        for (const pattern of chapterPatterns) {
+            const match = breadcrumbText.match(pattern);
             if (match) {
-                console.log('Found viewerId in __NEXT_DATA__:', match[1]);
-                return match[1];
+                chapter = match[1].padStart(2, "0");
+                break;
             }
         }
-    } catch (e) {
-        console.log('Error checking __NEXT_DATA__:', e);
     }
-    
-    // Method 2: Search through script tags
-    console.log('Searching script tags...');
-    const scripts = Array.from(document.querySelectorAll('script'));
-    console.log(`Found ${scripts.length} script tags`);
-    
-    for (let i = 0; i < scripts.length; i++) {
-        const script = scripts[i];
-        const content = script.textContent || script.innerHTML;
-        
-        if (!content || content.length === 0) continue;
-        
-        // Try multiple patterns: "viewerId", "comici-viewer-id", etc.
-        // Note: In Next.js script tags, quotes are often escaped as \"
-        const patterns = [
-            /\\"viewerId\\":\s*\\"([a-f0-9]{32,})\\"/i,  // Escaped quotes in Next.js
-            /"viewerId"\s*:\s*"([a-f0-9]{32,})"/i,       // Regular quotes
-            /'viewerId'\s*:\s*'([a-f0-9]{32,})'/i,       // Single quotes
-            /comici-viewer-id["\s:=]+([a-f0-9]{32,})/i,
-            /"viewer-id"\s*:\s*"([a-f0-9]{32,})"/i,
-        ];
-        
-        for (const pattern of patterns) {
-            const match = content.match(pattern);
-            if (match) {
-                console.log(`Found viewerId in script tag ${i}:`, match[1]);
-                return match[1];
+
+    console.log(`Extracted metadata → Title: "${title}", Chapter: "${chapter}"`);
+    return { title, chapter };
+}
+
+function extractViewerId(): string | null {
+    const selectors = [
+        "[data-comici-viewer-id]",
+        "[data-viewer-id]",
+        "[data-viewerid]",
+        "[data-comic-viewerid]",
+        "#viewer",
+    ];
+
+    for (const selector of selectors) {
+        const element = document.querySelector(selector) as HTMLElement | null;
+        if (!element) continue;
+        const attrNames = ["data-comici-viewer-id", "data-viewer-id", "data-viewerid", "data-viewerId"];
+        for (const attr of attrNames) {
+            const value = element.getAttribute(attr);
+            if (value && value.trim()) {
+                console.log(`Found viewer ID via ${selector} (${attr}).`);
+                return value.trim();
             }
         }
-        
-        // Log if script contains viewerId keyword but didn't match
-        if (content.toLowerCase().includes('viewerid') || content.toLowerCase().includes('viewer-id')) {
-            console.log(`Script ${i} contains 'viewerId' keyword but no match. Sample:`, content.substring(0, 500));
+        if (element.dataset?.viewerId) {
+            console.log(`Found viewer ID via ${selector} (dataset).`);
+            return element.dataset.viewerId.trim();
         }
     }
-    
-    // Method 3: Check data attributes
-    console.log('Checking data attributes...');
-    const viewerElement = document.querySelector('[data-viewer-id]');
-    if (viewerElement) {
-        const id = viewerElement.getAttribute('data-viewer-id');
-        console.log('Found viewerId in data attribute:', id);
-        return id;
+
+    const metaViewer = document.querySelector('meta[name="comici-viewer-id"]')?.getAttribute("content");
+    if (metaViewer) {
+        console.log("Found viewer ID via meta tag.");
+        return metaViewer.trim();
     }
-    
-    // Method 4: Check if there's a viewer container with data
-    const viewerContainer = document.querySelector('[class*="viewer"]');
-    if (viewerContainer) {
-        console.log('Found viewer container:', viewerContainer.className);
-        // Check all attributes
-        for (const attr of Array.from(viewerContainer.attributes)) {
-            console.log(`  Attribute: ${attr.name} = ${attr.value.substring(0, 100)}`);
+
+    const scriptMatch = extractViewerIdFromScripts();
+    if (scriptMatch) {
+        console.log("Found viewer ID via inline script.");
+        return scriptMatch;
+    }
+
+    const globalAny = window as Record<string, unknown>;
+    const candidates = [
+        (globalAny.__NUXT__ as any)?.state?.viewerId,
+        (globalAny.__NUXT__ as any)?.state?.book?.viewerId,
+        (globalAny.__NUXT__ as any)?.state?.episode?.viewerId,
+        (globalAny.__NEXT_DATA__ as any)?.props?.pageProps?.viewerId,
+        (globalAny as any).viewerId,
+        (globalAny as any).__VIEWER_ID__,
+    ];
+
+    for (const candidate of candidates) {
+        if (typeof candidate === "string" && candidate.length > 6) {
+            console.log("Found viewer ID via global state.");
+            return candidate;
         }
     }
-    
-    console.log('ViewerId not found with any method');
+
     return null;
 }
 
-// Unscramble image by rearranging tiles
-async function unscrambleImage(imageUrl: string, scramblePattern: number[]): Promise<string> {
-    try {
-        // Fetch the image
-        const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
-        const blob = new Blob([response.data], { type: 'image/jpeg' });
-        const imageBitmap = await createImageBitmap(blob);
-        
-        // Calculate tile dimensions (4x4 grid = 16 tiles)
-        const tilesPerRow = 4;
-        const tilesPerCol = 4;
-        const tileWidth = imageBitmap.width / tilesPerRow;
-        const tileHeight = imageBitmap.height / tilesPerCol;
-        
-        // Create canvas for unscrambling
-        const canvas = document.createElement('canvas');
-        canvas.width = imageBitmap.width;
-        canvas.height = imageBitmap.height;
-        const ctx = canvas.getContext('2d');
-        
-        if (!ctx) {
-            throw new Error('Could not get canvas context');
-        }
-        
-        // Draw tiles in correct order
-        for (let i = 0; i < scramblePattern.length; i++) {
-            const scrambledIndex = scramblePattern[i];
-            
-            // Source position (scrambled)
-            const srcX = (scrambledIndex % tilesPerRow) * tileWidth;
-            const srcY = Math.floor(scrambledIndex / tilesPerRow) * tileHeight;
-            
-            // Destination position (correct order)
-            const destX = (i % tilesPerRow) * tileWidth;
-            const destY = Math.floor(i / tilesPerRow) * tileHeight;
-            
-            ctx.drawImage(
-                imageBitmap,
-                srcX, srcY, tileWidth, tileHeight,
-                destX, destY, tileWidth, tileHeight
-            );
-        }
-        
-        // Convert canvas to data URL
-        return canvas.toDataURL('image/jpeg', 0.95);
-    } catch (error) {
-        console.error('Error unscrambling image:', error);
-        // Fallback: return original image as data URL
-        try {
-            const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
-            const base64 = btoa(
-                new Uint8Array(response.data).reduce(
-                    (data, byte) => data + String.fromCharCode(byte),
-                    ''
-                )
-            );
-            return `data:image/jpeg;base64,${base64}`;
-        } catch (fallbackError) {
-            console.error('Fallback also failed:', fallbackError);
-            throw fallbackError;
+function extractViewerIdFromScripts(): string | null {
+    const scripts = Array.from(document.querySelectorAll("script"));
+    for (const script of scripts) {
+        const text = script.textContent;
+        if (!text) continue;
+        const match =
+            text.match(/comiciViewerId["']?\s*[:=]\s*["']([a-z0-9_-]+)["']/i) ||
+            text.match(/viewerId["']?\s*[:=]\s*["']([a-z0-9_-]+)["']/i);
+        if (match) {
+            return match[1];
         }
     }
+    return null;
 }
 
-// Port management
-let port: chrome.runtime.Port | null = null;
-let connName: string | null = null;
+function extractEpisodeId(): string | null {
+    const match = window.location.pathname.match(/episodes\/([a-z0-9]+)/i);
+    return match ? match[1] : null;
+}
 
-function createPort() {
-    if (port) {
-        try {
-            port.disconnect();
-        } catch (_e) {
-            // Port already disconnected
-        }
+async function fetchContentsInfo(viewerId: string): Promise<ContentsInfo> {
+    const probe = await requestContentsInfoRange(viewerId, 0, 1);
+
+    if (!probe || !probe.result?.length) {
+        throw new Error("contentsInfo probe returned no pages");
     }
-    
-    port = chrome.runtime.connect({ name: connName || undefined });
-    
-    port.onDisconnect.addListener(() => {
-        console.log("Port disconnected, will reconnect on next message");
-        port = null;
+
+    const totalPages = probe.totalPages ?? probe.result.length;
+
+    if (totalPages <= probe.result.length) {
+        return probe;
+    }
+
+    const full = await requestContentsInfoRange(viewerId, 0, totalPages);
+    if (!full || !full.result?.length) {
+        console.warn("Full contentsInfo request failed, falling back to probe result");
+        return probe;
+    }
+
+    return full;
+}
+
+async function requestContentsInfoRange(
+    viewerId: string,
+    pageFrom: number,
+    pageTo: number
+): Promise<ContentsInfo | null> {
+    const url = new URL("/api/book/contentsInfo", window.location.origin);
+    url.searchParams.set("user-id", "");
+    url.searchParams.set("comici-viewer-id", viewerId);
+    url.searchParams.set("page-from", String(Math.max(0, pageFrom)));
+    url.searchParams.set("page-to", String(Math.max(pageFrom, pageTo)));
+
+    const response = await fetch(url.toString(), {
+        method: "GET",
+        credentials: "include",
+        headers: {
+            Accept: "application/json, text/plain, */*",
+            "Accept-Language": navigator.language ? `${navigator.language},en;q=0.8` : "en-US,en;q=0.8",
+            Authorization: "",
+        },
+        referrer: window.location.href,
+        referrerPolicy: "strict-origin-when-cross-origin",
+        mode: "cors",
     });
-    
-    return port;
+
+    if (!response.ok) {
+        const text = await response.text().catch(() => "");
+        console.warn("contentsInfo request failed", response.status, response.statusText, text.slice(0, 200));
+        return null;
+    }
+
+    return (await response.json()) as ContentsInfo;
 }
 
-function safePostMessage(message: any) {
-    try {
-        if (!port || !('name' in port)) {
-            port = createPort();
-        }
-        port.postMessage(message);
-    } catch (_error) {
-        console.log("Port disconnected, attempting to reconnect...");
-        port = createPort();
-        try {
-            port.postMessage(message);
-        } catch (retryError) {
-            console.error("Failed to send message after reconnection:", retryError);
-        }
+async function downloadAndDescramble(meta: PagePayload, pageNumber: number, viewerId: string): Promise<PageCapture | null> {
+    const imageUrl = buildImageUrl(meta.imageUrl, viewerId);
+    if (!imageUrl) {
+        console.warn(`Page ${pageNumber} is missing imageUrl`);
+        return null;
     }
+
+    const response = await fetch(imageUrl, {
+        mode: "cors",
+        credentials: "omit",
+        headers: {
+            Accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+            "Accept-Language": navigator.language ? `${navigator.language},en;q=0.8` : "en-US,en;q=0.8",
+        },
+    });
+    if (!response.ok) {
+        throw new Error(`Failed to fetch page image (${response.status})`);
+    }
+
+    const blob = await response.blob();
+    const scramblePattern = parseScramblePattern(meta.scramble) ?? FALLBACK_PATTERN;
+    const dataUrl = await descrambleBlob(blob, scramblePattern);
+
+    console.log(`✓ Page ${pageNumber} descrambled (${Math.round(blob.size / 1024)} KB)`);
+    return { pageId: pageNumber, dataUrl };
 }
 
-async function main() {
-    try {
-        const { ["me-conn-name"]: storedConnName } = await storageGet("me-conn-name");
-        connName = storedConnName as string;
-        
-        const { TITLE, CHAPTER, FILENAME_PREFIX } = extractMetadata();
-        console.log(`Start extract on: ${FILENAME_PREFIX}`);
-        
-        port = createPort();
-        safePostMessage({ status: PROGRESS_STATUS.READING });
-        
-        // Extract viewer ID
-        console.log('Attempting to extract viewer ID...');
-        const viewerId = extractViewerId();
-        console.log('Viewer ID extracted:', viewerId);
-        
-        if (!viewerId) {
-            const errorMsg = 'Could not find viewer ID (viewerId). Please make sure:\n' +
-                '1. You are on an episode page (takecomic.jp/episodes/...)\n' +
-                '2. The viewer is loaded (you may need to click "開いて読む" button)\n' +
-                '3. You are logged in and have access to this episode';
-            console.error(errorMsg);
-            alert(errorMsg);
-            safePostMessage({ status: PROGRESS_STATUS.FINISHED });
-            return;
-        }
-    
-    console.log(`Found viewer ID: ${viewerId}`);
-    
-    try {
-        // Fetch first batch to get total pages
-        console.log('Fetching initial page info...');
-        const initialResponse = await axios.get<ContentsResponse>(
-            `/api/book/contentsInfo?user-id=&comici-viewer-id=${viewerId}&page-from=0&page-to=5`
-        );
-        
-        const totalPages = initialResponse.data.totalPages;
-        console.log(`Total pages: ${totalPages}`);
-        console.log('Fetching all pages data...');
-        
-        // Fetch all pages
-        const fullResponse = await axios.get<ContentsResponse>(
-            `/api/book/contentsInfo?user-id=&comici-viewer-id=${viewerId}&page-from=0&page-to=${totalPages}`
-        );
-        
-        const pages = fullResponse.data.result;
-        console.log(`Fetched ${pages.length} pages`);
-        console.log('Sample page structure:', pages[0] ? { 
-            imageUrl: pages[0].imageUrl.substring(0, 50) + '...', 
-            hasScramble: !!pages[0].scramble,
-            sort: pages[0].sort 
-        } : 'No pages');
-        
-        // Process images
-        const dataUrls: Array<{ pageId: number; dataUrl: string }> = [];
-        
-        for (let i = 0; i < pages.length; i++) {
-            const page = pages[i];
-            console.log(`Processing page ${i + 1}/${pages.length}...`);
-            
-            try {
-                const scrambleArray: number[] = JSON.parse(page.scramble);
-                const unscrambledDataUrl = await unscrambleImage(page.imageUrl, scrambleArray);
-                dataUrls.push({
-                    pageId: page.sort + 1, // Use sort order, +1 for 1-based indexing
-                    dataUrl: unscrambledDataUrl
-                });
-            } catch (error) {
-                console.error(`Failed to process page ${i + 1}:`, error);
-                // Continue with next page
-            }
-        }
-        
-        console.log(`Successfully processed ${dataUrls.length} pages`);
-        safePostMessage({ status: PROGRESS_STATUS.FINALIZING });
-        
-        // Download as zip
-        zipAndDownload(
-            dataUrls,
-            { FILENAME_PREFIX, CHAPTER },
-            () => safePostMessage({ status: PROGRESS_STATUS.FINISHED })
-        );
-        
-    } catch (apiError: any) {
-        console.error('API/Extraction error:', apiError);
-        console.error('Error details:', {
-            message: apiError.message,
-            response: apiError.response,
-            config: apiError.config
-        });
-        const errorDetails = apiError.response ? 
-            `Status: ${apiError.response.status}, Data: ${JSON.stringify(apiError.response.data)}` : 
-            apiError.message;
-        alert(`Failed to extract pages: ${errorDetails}\n\nMake sure you are logged in and have access to this episode.`);
-        safePostMessage({ status: PROGRESS_STATUS.FINISHED });
+function buildImageUrl(rawUrl: string | undefined, viewerId: string): string | null {
+    if (!rawUrl) return null;
+
+    if (rawUrl.includes("viewer.takecomic.jp")) {
+        return rawUrl;
     }
-    } catch (mainError) {
-        console.error('Main function error:', mainError);
-        alert(`Unexpected error: ${mainError}`);
-        try {
-            safePostMessage({ status: PROGRESS_STATUS.FINISHED });
-        } catch (_e) {
-            // Port might be dead
+
+    try {
+        const url = new URL(rawUrl, window.location.origin);
+        return url.toString();
+    } catch {
+        // rawUrl might already be a file name; assemble manually
+    }
+
+    // Example format: master-{timestamp}-{page}.jpg
+    const fileName = rawUrl.replace(/^\/+/, "");
+    if (!fileName) return null;
+
+    return `https://viewer.takecomic.jp/book/${viewerId}/${fileName}`;
+}
+
+function parseScramblePattern(scramble?: string | number[]): number[] | null {
+    if (!scramble) return null;
+
+    const parseArray = (raw: unknown): number[] | null => {
+        if (!Array.isArray(raw)) return null;
+        const values = raw.map((value) => Number(value)).filter((value) => Number.isFinite(value));
+        return values.length ? values : null;
+    };
+
+    if (Array.isArray(scramble)) {
+        return parseArray(scramble);
+    }
+
+    const trimmed = scramble.trim();
+    if (!trimmed) return null;
+
+    try {
+        const parsed = JSON.parse(trimmed);
+        const values = parseArray(parsed);
+        if (values) return values;
+    } catch {
+        // Continue with manual split fallback below
+    }
+
+    const manual = trimmed
+        .replace(/[\[\]]/g, "")
+        .split(/[,|\s]+/)
+        .map((value) => Number(value))
+        .filter((value) => Number.isFinite(value));
+
+    return manual.length ? manual : null;
+}
+
+async function descrambleBlob(blob: Blob, pattern: number[]): Promise<string> {
+    const image = await blobToImage(blob);
+
+    const scratch = document.createElement("canvas");
+    scratch.width = image.width;
+    scratch.height = image.height;
+    const scratchCtx = scratch.getContext("2d");
+    if (!scratchCtx) {
+        throw new Error("Canvas 2D context unavailable");
+    }
+    scratchCtx.drawImage(image, 0, 0);
+
+    if (pattern.length <= 1) {
+        return scratch.toDataURL("image/png");
+    }
+
+    const { rows, cols } = inferGrid(pattern.length);
+    const permutation = derivePermutation(pattern, rows, cols);
+
+    if (permutation.length !== rows * cols) {
+        console.warn("Permutation mismatch, returning original image");
+        return scratch.toDataURL("image/png");
+    }
+
+    const output = document.createElement("canvas");
+    output.width = image.width;
+    output.height = image.height;
+    const outputCtx = output.getContext("2d");
+    if (!outputCtx) {
+        throw new Error("Canvas 2D context unavailable for output");
+    }
+
+    const xSegments = buildSegments(image.width, cols);
+    const ySegments = buildSegments(image.height, rows);
+
+    for (let destIndex = 0; destIndex < permutation.length; destIndex++) {
+        const srcIndex = permutation[destIndex];
+        const sourceRect = getTileRect(srcIndex, xSegments, ySegments, cols);
+        const destRect = getTileRect(destIndex, xSegments, ySegments, cols);
+
+        outputCtx.drawImage(
+            scratch,
+            sourceRect.x,
+            sourceRect.y,
+            sourceRect.width,
+            sourceRect.height,
+            destRect.x,
+            destRect.y,
+            destRect.width,
+            destRect.height
+        );
+    }
+
+    return output.toDataURL("image/png");
+}
+
+function inferGrid(length: number): { rows: number; cols: number } {
+    if (length === TILES_PER_SIDE * TILES_PER_SIDE) {
+        return { rows: TILES_PER_SIDE, cols: TILES_PER_SIDE };
+    }
+
+    const sqrt = Math.sqrt(length);
+    if (Number.isInteger(sqrt)) {
+        return { rows: sqrt, cols: sqrt };
+    }
+
+    let bestRows = 1;
+    let bestCols = length;
+    let bestDiff = Number.MAX_SAFE_INTEGER;
+    for (let rows = 1; rows <= length; rows++) {
+        if (length % rows !== 0) continue;
+        const cols = length / rows;
+        const diff = Math.abs(rows - cols);
+        if (diff < bestDiff) {
+            bestDiff = diff;
+            bestRows = rows;
+            bestCols = cols;
         }
     }
+    return { rows: bestRows, cols: bestCols };
+}
+
+function derivePermutation(pattern: number[], rows: number, cols: number): number[] {
+    const destTransposed = transposePattern(pattern, rows, cols);
+    return destTransposed.map((value) => transposeIndex(value, rows, cols));
+}
+
+function transposePattern(pattern: number[], rows: number, cols: number): number[] {
+    const matrix: number[][] = [];
+    for (let r = 0; r < rows; r++) {
+        matrix.push(pattern.slice(r * cols, (r + 1) * cols));
+    }
+
+    const result: number[] = [];
+    for (let c = 0; c < cols; c++) {
+        for (let r = 0; r < rows; r++) {
+            result.push(matrix[r][c]);
+        }
+    }
+
+    return result;
+}
+
+function transposeIndex(value: number, rows: number, cols: number): number {
+    const r = Math.floor(value / cols);
+    const c = value % cols;
+    return c * cols + r;
+}
+
+type Segment = { start: number; size: number };
+
+function buildSegments(total: number, parts: number): Segment[] {
+    const base = Math.floor(total / parts);
+    let remainder = total % parts;
+    const segments: Segment[] = [];
+    let cursor = 0;
+
+    for (let i = 0; i < parts; i++) {
+        const size = base + (remainder > 0 ? 1 : 0);
+        segments.push({ start: cursor, size });
+        cursor += size;
+        if (remainder > 0) remainder -= 1;
+    }
+
+    return segments;
+}
+
+function getTileRect(index: number, columns: Segment[], rows: Segment[], cols: number) {
+    const rowIndex = Math.floor(index / cols);
+    const colIndex = index % cols;
+    const col = columns[colIndex] ?? { start: 0, size: 0 };
+    const row = rows[rowIndex] ?? { start: 0, size: 0 };
+    return { x: col.start, y: row.start, width: col.size, height: row.size };
+}
+
+async function blobToImage(blob: Blob): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(blob);
+        const image = new Image();
+        image.onload = () => {
+            URL.revokeObjectURL(url);
+            resolve(image);
+        };
+        image.onerror = (error) => {
+            URL.revokeObjectURL(url);
+            reject(error);
+        };
+        image.src = url;
+    });
 }
 
 // === Main ===
 main();
-
-
