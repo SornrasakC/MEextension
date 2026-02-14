@@ -352,6 +352,8 @@ async function descrambleBlob(blob: Blob, pattern: number[]): Promise<string> {
     if (!scratchCtx) {
         throw new Error("Canvas 2D context unavailable");
     }
+    // Ensure we never accidentally introduce seams from resampling.
+    scratchCtx.imageSmoothingEnabled = false;
     scratchCtx.drawImage(image, 0, 0);
 
     if (pattern.length <= 1) {
@@ -373,14 +375,43 @@ async function descrambleBlob(blob: Blob, pattern: number[]): Promise<string> {
     if (!outputCtx) {
         throw new Error("Canvas 2D context unavailable for output");
     }
+    outputCtx.imageSmoothingEnabled = false;
 
-    const xSegments = buildSegments(image.width, cols);
-    const ySegments = buildSegments(image.height, rows);
+    // IMPORTANT:
+    // takecomic tiles are permuted across the grid. If the image size isn't divisible by (rows, cols),
+    // a naive segmentation produces uneven tile sizes (e.g. last row is +1px). When tiles move between
+    // rows/cols, drawImage would *scale* them by 1px, creating thin horizontal/vertical seams.
+    //
+    // To avoid that, descramble only the largest region divisible by the grid, and keep the remainder
+    // strips (bottom/right) untouched.
+    const effectiveWidth = image.width - (image.width % cols);
+    const effectiveHeight = image.height - (image.height % rows);
+
+    // Preserve remainder strips (if any) by starting from the original image.
+    outputCtx.drawImage(scratch, 0, 0);
+
+    if (effectiveWidth <= 0 || effectiveHeight <= 0) {
+        console.warn("Invalid effective tile area, returning original image", {
+            width: image.width,
+            height: image.height,
+            rows,
+            cols,
+            effectiveWidth,
+            effectiveHeight,
+        });
+        return output.toDataURL("image/png");
+    }
+
+    const xSegments = buildSegments(effectiveWidth, cols);
+    const ySegments = buildSegments(effectiveHeight, rows);
+
+    const destXSegments = buildSegments(effectiveWidth, cols);
+    const destYSegments = buildSegments(effectiveHeight, rows);
 
     for (let destIndex = 0; destIndex < permutation.length; destIndex++) {
         const srcIndex = permutation[destIndex];
         const sourceRect = getTileRect(srcIndex, xSegments, ySegments, cols);
-        const destRect = getTileRect(destIndex, xSegments, ySegments, cols);
+        const destRect = getTileRect(destIndex, destXSegments, destYSegments, cols);
 
         outputCtx.drawImage(
             scratch,
@@ -454,18 +485,12 @@ function transposeIndex(value: number, rows: number, cols: number): number {
 type Segment = { start: number; size: number };
 
 function buildSegments(total: number, parts: number): Segment[] {
-    const base = Math.floor(total / parts);
-    let remainder = total % parts;
     const segments: Segment[] = [];
-    let cursor = 0;
-
     for (let i = 0; i < parts; i++) {
-        const size = base + (remainder > 0 ? 1 : 0);
-        segments.push({ start: cursor, size });
-        cursor += size;
-        if (remainder > 0) remainder -= 1;
+        const start = Math.floor((i * total) / parts);
+        const end = Math.floor(((i + 1) * total) / parts);
+        segments.push({ start, size: end - start });
     }
-
     return segments;
 }
 
