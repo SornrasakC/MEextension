@@ -121,7 +121,7 @@ async function buildAll() {
   const handlersDir = './app/handlers';
   if (existsSync(handlersDir)) {
     const handlers = readdirSync(handlersDir).filter(
-      f => (f.endsWith('.js') || f.endsWith('.ts')) && !f.includes('entries')
+      f => (f.endsWith('.js') || f.endsWith('.ts')) && !f.includes('entries') && !f.startsWith('_')
     );
     for (const h of handlers) {
       await Bun.build({

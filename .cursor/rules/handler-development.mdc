@@ -1,0 +1,102 @@
+---
+description: Guide for building, modifying, and testing manga reader handlers
+globs: app/handlers/**
+---
+
+# Handler Development Guide
+
+## Before You Start
+
+1. **Read `app/handlers/NOTES.md`** -- check handler status, known issues, what was tried before
+
+## MANDATORY: Update NOTES.md When Done
+
+**Every session that touches handler code, runs extraction, or discovers anything about a handler site MUST update `app/handlers/NOTES.md` before finishing.** This is not optional. Even if you only ran a test or explored a site without changing code, record what you found. Future agents (including yourself in a new session) depend on this to avoid repeating mistakes.
+
+Update the relevant handler entry with:
+- New test URLs used (with real hashes, not placeholders)
+- Status changes (Working/Broken/Unknown)
+- `Last tested` date
+- Any bugs found and fixes applied
+- New site quirks discovered (CSP issues, auth requirements, DOM structure changes)
+- What was tried and failed (even partial attempts)
+
+2. **Explore the target site** using the Cursor browser:
+   - `browser_navigate` to the manga reader URL
+   - `browser_snapshot` to inspect DOM structure
+   - `browser_network_requests` to discover API endpoints
+   - `browser_take_screenshot` to capture the reader view
+
+## Creating a New Handler
+
+### Step 1: Copy the template
+Copy `app/handlers/_template.ts` and rename it to match your reader (e.g., `new-reader.ts`).
+
+### Step 2: Implement the handler
+Fill in the template sections:
+- **Config**: site-specific constants, selectors, API endpoints
+- **extractMetadata()**: scrape title + chapter from the page
+- **getPages()**: get list of page URLs/data (API call or DOM scan)
+- **Processing**: download each page, optionally descramble
+- **Output**: captures array with `{ pageId, dataUrl }` objects
+
+### Step 3: Register the handler
+
+Update these files:
+1. `cli/extract.ts` -- add entry to `HANDLERS` object
+2. `src/types/index.ts` -- add to `READERS` enum
+3. `src/services/handlers.ts` -- add `executeXxxScript()` function
+4. `src/pages/App.tsx` -- add to `readerOptions` array and `handleSubmit` switch
+5. `chrome/manifest.json` -- add handler JS to `web_accessible_resources`
+
+### Step 4: Build and test
+
+```bash
+bun run build
+bun cli/extract.ts --reader new-reader --url "https://..." --out ./output
+bun cli/verify.ts --input ./output
+```
+
+### Step 5: Sanity check with Cursor browser
+
+1. Open `output/viewer.html` -- scroll through extracted pages
+2. Open the original manga URL -- compare side by side
+3. Check: correct page count? readable? no artifacts?
+
+### Step 6: Update NOTES.md
+
+Add an entry for the new handler with: status, type, test URL, quirks, findings.
+
+## Handler Conventions
+
+- Export `main()` and all helper functions
+- End the file with `main();` for IIFE auto-execution
+- Use `export type` for shared types
+- Type: `PageCapture = { pageId: number; dataUrl: string }` is the standard output format
+- Use `zipAndDownload(captures, { FILENAME_PREFIX, CHAPTER })` for browser-context output
+
+## Common Patterns
+
+### API-based extraction (like takecomic)
+1. Extract viewer/episode ID from URL or DOM
+2. Call API endpoint to get page metadata
+3. Download images via fetch
+4. Optionally descramble (canvas tile rearrangement, XOR decryption, etc.)
+5. Return as data URLs
+
+### DOM-based extraction (like speed-binb)
+1. Navigate/scroll to each page element
+2. Use `dom-to-image` to capture the rendered page
+3. Return as data URLs
+
+### Handling auth
+Use `--profile` flag with the CLI to reuse a Chrome profile:
+```bash
+bun cli/extract.ts --reader kindle --url "..." --profile ./chrome-profile
+```
+
+### Debugging
+Use `--headed` to see the browser:
+```bash
+bun cli/extract.ts --reader takecomic --url "..." --headed
+```

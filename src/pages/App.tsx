@@ -2,6 +2,7 @@ import React, { useEffect, useState, useReducer } from 'react';
 import {
   executeSpeedBinbReaderScript,
   executeNicoDougaScript,
+  executeNicoMangaScript,
   executeComicWalkerScript,
   executeComicPixivScript,
   executeKindleScript,
@@ -40,6 +41,7 @@ async function _kaishi(
 
 const readerOptions: ReaderOption[] = [
   { key: READERS.NICO_DOUGA, value: READERS.NICO_DOUGA },
+  { key: READERS.NICO_MANGA, value: READERS.NICO_MANGA },
   { key: READERS.COMIC_WALKER, value: READERS.COMIC_WALKER },
   { key: READERS.SPEED_BINB, value: READERS.SPEED_BINB },
   { key: READERS.COMIC_PIXIV, value: READERS.COMIC_PIXIV },
@@ -91,6 +93,9 @@ export default function App(): JSX.Element {
     switch (reader) {
       case READERS.NICO_DOUGA:
         executeNicoDougaScript();
+        break;
+      case READERS.NICO_MANGA:
+        executeNicoMangaScript();
         break;
       case READERS.SPEED_BINB:
         executeSpeedBinbReaderScript();

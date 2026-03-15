@@ -1,0 +1,132 @@
+---
+description: CLI extract-verify workflow quick reference
+globs: cli/**
+---
+
+# CLI Workflow Reference
+
+## Extract
+
+```bash
+bun cli/extract.ts --reader <name> --url <url> [--out ./output] [--headed] [--profile <dir>]
+```
+
+Available readers: `takecomic`, `nico-douga`, `comic-walker`, `speed-binb`, `kindle`, `comicbushi`, `comic-pixiv`
+
+### Options
+- `--reader` / `-r`: Reader name (required)
+- `--url` / `-u`: URL to extract from (required)
+- `--out` / `-o`: Output directory (default: `./output`)
+- `--headed`: Show browser window (useful for debugging)
+- `--profile`: Chrome user data directory (for sites that need login)
+
+### Examples
+```bash
+# Takecomic extraction
+bun cli/extract.ts --reader takecomic --url "https://takecomic.jp/episodes/abc123"
+
+# Speed Binb with visible browser
+bun cli/extract.ts --reader speed-binb --url "https://storia.takeshobo.co.jp/..." --headed
+
+# Kindle with saved login session
+bun cli/extract.ts --reader kindle --url "https://read.amazon.com/..." --profile ./my-chrome-profile
+```
+
+## Verify
+
+```bash
+bun cli/verify.ts --input <path>
+```
+
+- Accepts a directory of images or a ZIP file
+- Checks: page count, file sizes, valid image headers, sequential numbering
+- Generates `viewer.html` in the input directory for visual review
+
+### Example
+```bash
+bun cli/verify.ts --input ./output
+```
+
+## Full Loop
+
+```bash
+bun run build && bun cli/extract.ts -r takecomic -u "URL" && bun cli/verify.ts -i ./output
+```
+
+## Sanity Check with Cursor Browser
+
+After extraction + verification:
+
+1. Open `output/viewer.html` in the Cursor browser to see extracted pages
+2. Open the original manga URL in the Cursor browser
+3. Compare: same page count? readable content? no artifacts or seams?
+
+This comparison against the live source is the best verification -- it catches both extraction bugs and site changes.
+
+## Architecture Notes
+
+- `extract.ts` dispatches to `puppeteer-runner.ts` which launches a real Chrome browser
+- The built handler IIFE script is injected into the page via `page.addScriptTag()`
+- This is identical to how the Chrome extension injects handlers via `chrome.scripting.executeScript`
+- Downloads are intercepted via Chrome DevTools Protocol (CDP)
+- The handler runs in the page context with full DOM + fetch access
+
+---
+
+## Monthly Batch Workflow
+
+For recurring monthly extraction of the latest episode from each tracked series.
+
+### Series List
+
+Tracked series are listed in `app/handlers/NOTES.md` under the **"Monthly Series"** section. Each entry has:
+- Series URL (e.g. `https://takecomic.jp/series/8e32550d65684`)
+- Reader name (e.g. `takecomic`)
+- Short name for output folder (e.g. `yume-furarete-yuri`)
+
+### Workflow Steps
+
+1. **For each series**: visit the series URL, find the latest free episode link (`/episodes/{hash}`)
+2. **Extract**: run `bun cli/extract.ts --reader {reader} --url {episode_url} --out ./output/{short_name}`
+3. **Verify**: run `bun cli/verify.ts --input ./output/{short_name}`
+4. **Sanity check**: visually confirm extracted pages
+5. **Update NOTES.md**: record which episode was grabbed and the date
+
+### Output Structure
+
+```
+output/
+  {short_name}/                          # One folder per series
+    {Title} Ch-{NN}.zip                  # ZIP from handler (auto-named by page title)
+    {Title} Ch-{NN}_extracted/           # From verify.ts --input {zip}
+      {Title} Ch-{NN}/
+        Ch-{NN} Pg-001.png
+        Ch-{NN} Pg-002.png
+        ...
+      viewer.html
+```
+
+Example after grabbing latest from two series:
+
+```
+output/
+  yume-furarete-yuri/
+    夢でフラれてはじまる百合・51話 _ 竹コミ！.zip
+    夢でフラれてはじまる百合・51話 _ 竹コミ！_extracted/
+      夢でフラれてはじまる百合・51話 _ 竹コミ！/
+        Ch-51 Pg-001.png
+        Ch-51 Pg-002.png
+        ...
+      viewer.html
+  another-manga/
+    ...
+```
+
+### Finding the Latest Episode
+
+For takecomic series pages, episodes are listed newest-first. The first link with "無料" (free) badge is the latest free episode. Paid episodes show a coin cost (e.g. "90"). To access paid episodes, use `--profile` with a logged-in Chrome profile.
+
+To find the latest episode URL from a series page:
+1. Fetch the series page HTML
+2. Parse episode links -- they follow the pattern `/episodes/{hash}`
+3. The first link in the list is the newest episode

@@ -47,4 +47,11 @@ export async function executeComicbushiScript(): Promise<void> {
  */
 export async function executeTakecomicScript(): Promise<void> {
   return executeScriptInActiveTab('handlers/takecomic.js');
+}
+
+/**
+ * Execute Nico Manga script (manga.nicovideo.jp)
+ */
+export async function executeNicoMangaScript(): Promise<void> {
+  return executeScriptInActiveTab('handlers/nico-manga.js');
 } 

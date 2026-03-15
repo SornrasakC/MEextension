@@ -1,6 +1,8 @@
 # CUSTOM
 build
 dump
+output
+cli/cookies
 release-tools/releases/*
 
 # Logs

@@ -1,0 +1,94 @@
+---
+description: Project architecture, conventions, and tool roles for Manga Extractor
+globs: **/*
+---
+
+# Manga Extractor (MEextension) - Project Overview
+
+## What This Project Is
+
+A manga/comic page extractor that downloads images from Japanese online manga reader websites and packages them into ZIP files. Supports multiple reader platforms.
+
+## Architecture: CLI-First + Optional Chrome Extension
+
+The project has TWO delivery mechanisms for the same handler code:
+
+1. **CLI tool** (`cli/extract.ts`) -- Puppeteer-based, runs from terminal, fully automatable
+2. **Chrome extension** (`chrome/manifest.json`) -- Overlay UI, manual use in the browser
+
+Both use the same handler scripts from `app/handlers/`.
+
+### Handler Types
+
+| Type | Handlers | How they work | CLI path |
+|------|----------|---------------|----------|
+| API-based | takecomic, nico-douga, comic-walker | HTTP requests + optional descrambling | Puppeteer navigates to page, injects handler script |
+| DOM-based | speed-binb, kindle, comicbushi, comic-pixiv | DOM access + dom-to-image capture | Puppeteer navigates to page, injects handler script |
+
+All handlers are built as IIFE bundles that auto-execute `main()` when injected.
+
+### Tool Roles
+
+- **Shell**: runs build, extract, verify commands
+- **Cursor browser**: explores manga sites (DOM, network, screenshots) + sanity checks extracted output vs live site
+- **Puppeteer** (via Shell): drives a real Chrome to execute handlers on actual pages
+
+## Directory Structure
+
+```
+cli/                          # CLI extraction + verification tools
+  extract.ts                  # Main entry: bun cli/extract.ts --reader X --url URL
+  puppeteer-runner.ts         # Shared Puppeteer launcher
+  verify.ts                   # Sanity checks + viewer.html generator
+
+app/handlers/                 # Site-specific extraction handlers (shared by CLI + extension)
+  _template.ts                # Scaffold for new handlers
+  NOTES.md                    # Per-handler status, issues, findings
+  takecomic.ts                # Takecomic/Comici reader (API-based)
+  speed-binb-reader.js        # Speed Binb reader (DOM-based)
+  comic-walker.js             # Comic Walker / Nico Douga (API-based)
+  nico-douga.js               # Nico Douga (API-based)
+  comic-pixiv.js              # Comic Pixiv (DOM-based)
+  kindle.js                   # Kindle Cloud Reader (DOM-based)
+  comicbushi.js               # Comicbushi (DOM-based, CORS issues)
+
+app/utils/                    # Shared utilities (zipAndDownload, timeout, etc.)
+src/                          # Chrome extension TypeScript source (React UI, background, content script)
+static/                       # Static assets (HTML, CSS, fonts)
+chrome/                       # Chrome extension manifest + icons
+build/                        # Build output (extension + handler IIFE bundles)
+build.ts                      # Bun build script
+```
+
+## Key Commands
+
+```bash
+bun run build                  # Build extension + handlers
+bun run dev                    # Build with file watching
+bun cli/extract.ts --reader takecomic --url "..." --out ./output   # Extract
+bun cli/verify.ts --input ./output                                  # Verify
+bun run lint                   # ESLint
+bun run format                 # Prettier
+```
+
+## Conventions
+
+- Handlers export `main()` and all helper functions for testability
+- Handlers end with `main();` which auto-executes in IIFE builds
+- Handler files starting with `_` are templates/scaffolds and not built
+- All handler types/functions use `export` keyword
+- TypeScript for new code; legacy JS handlers are gradually migrated
+- Build target: ES2022, browser context
+
+## MANDATORY: NOTES.md Protocol
+
+**Read `app/handlers/NOTES.md` at the START of every session** that involves handlers, extraction, or site exploration.
+
+**Update `app/handlers/NOTES.md` at the END of every session** -- even if you only ran a test or explored a site without code changes. This is not optional. Record:
+- Test URLs with real values (not placeholders)
+- Bugs found and fixes applied
+- Site quirks discovered (CSP, auth, DOM structure, API endpoints)
+- What was tried and failed
+- Updated `Last tested` date
+
+Future agents depend entirely on NOTES.md to avoid repeating mistakes and wasting time. If you skip this, the next agent will hit the same problems you already solved.

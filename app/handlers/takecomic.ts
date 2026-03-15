@@ -1,11 +1,13 @@
 import { timeout, zipAndDownload } from "../utils/utils";
 
-type ContentsInfo = {
+// === Types (exported for CLI / tests) ===
+
+export type ContentsInfo = {
     totalPages: number;
     result: Array<PagePayload>;
 };
 
-type PagePayload = {
+export type PagePayload = {
     imageUrl: string;
     scramble?: string | number[];
     sort?: number;
@@ -13,12 +15,16 @@ type PagePayload = {
     height?: number;
 };
 
-type PageCapture = { pageId: number; dataUrl: string };
+export type PageCapture = { pageId: number; dataUrl: string };
 
-const FALLBACK_PATTERN = [11, 6, 1, 8, 14, 7, 0, 4, 9, 15, 13, 10, 12, 5, 2, 3];
-const TILES_PER_SIDE = 4; // Preferred grid (4x4)
+// === Constants ===
 
-async function main() {
+export const FALLBACK_PATTERN = [11, 6, 1, 8, 14, 7, 0, 4, 9, 15, 13, 10, 12, 5, 2, 3];
+export const TILES_PER_SIDE = 4; // Preferred grid (4x4)
+
+// === Main ===
+
+export async function main() {
     console.log("Takecomic (Comici) handler starting with API descrambler...");
 
     const metadata = extractMetadata();
@@ -76,7 +82,9 @@ async function main() {
     }
 }
 
-function extractMetadata(): { title: string; chapter: string } {
+// === Metadata extraction ===
+
+export function extractMetadata(): { title: string; chapter: string } {
     let title = "unknown";
     let chapter = "01";
 
@@ -128,7 +136,9 @@ function extractMetadata(): { title: string; chapter: string } {
     return { title, chapter };
 }
 
-function extractViewerId(): string | null {
+// === Viewer ID extraction ===
+
+export function extractViewerId(): string | null {
     const selectors = [
         "[data-comici-viewer-id]",
         "[data-viewer-id]",
@@ -186,7 +196,7 @@ function extractViewerId(): string | null {
     return null;
 }
 
-function extractViewerIdFromScripts(): string | null {
+export function extractViewerIdFromScripts(): string | null {
     const scripts = Array.from(document.querySelectorAll("script"));
     for (const script of scripts) {
         const text = script.textContent;
@@ -201,12 +211,14 @@ function extractViewerIdFromScripts(): string | null {
     return null;
 }
 
-function extractEpisodeId(): string | null {
+export function extractEpisodeId(): string | null {
     const match = window.location.pathname.match(/episodes\/([a-z0-9]+)/i);
     return match ? match[1] : null;
 }
 
-async function fetchContentsInfo(viewerId: string): Promise<ContentsInfo> {
+// === API ===
+
+export async function fetchContentsInfo(viewerId: string): Promise<ContentsInfo> {
     const probe = await requestContentsInfoRange(viewerId, 0, 1);
 
     if (!probe || !probe.result?.length) {
@@ -228,7 +240,7 @@ async function fetchContentsInfo(viewerId: string): Promise<ContentsInfo> {
     return full;
 }
 
-async function requestContentsInfoRange(
+export async function requestContentsInfoRange(
     viewerId: string,
     pageFrom: number,
     pageTo: number
@@ -261,7 +273,9 @@ async function requestContentsInfoRange(
     return (await response.json()) as ContentsInfo;
 }
 
-async function downloadAndDescramble(meta: PagePayload, pageNumber: number, viewerId: string): Promise<PageCapture | null> {
+// === Download & Descramble ===
+
+export async function downloadAndDescramble(meta: PagePayload, pageNumber: number, viewerId: string): Promise<PageCapture | null> {
     const imageUrl = buildImageUrl(meta.imageUrl, viewerId);
     if (!imageUrl) {
         console.warn(`Page ${pageNumber} is missing imageUrl`);
@@ -288,7 +302,7 @@ async function downloadAndDescramble(meta: PagePayload, pageNumber: number, view
     return { pageId: pageNumber, dataUrl };
 }
 
-function buildImageUrl(rawUrl: string | undefined, viewerId: string): string | null {
+export function buildImageUrl(rawUrl: string | undefined, viewerId: string): string | null {
     if (!rawUrl) return null;
 
     if (rawUrl.includes("viewer.takecomic.jp")) {
@@ -309,7 +323,7 @@ function buildImageUrl(rawUrl: string | undefined, viewerId: string): string | n
     return `https://viewer.takecomic.jp/book/${viewerId}/${fileName}`;
 }
 
-function parseScramblePattern(scramble?: string | number[]): number[] | null {
+export function parseScramblePattern(scramble?: string | number[]): number[] | null {
     if (!scramble) return null;
 
     const parseArray = (raw: unknown): number[] | null => {
@@ -342,7 +356,9 @@ function parseScramblePattern(scramble?: string | number[]): number[] | null {
     return manual.length ? manual : null;
 }
 
-async function descrambleBlob(blob: Blob, pattern: number[]): Promise<string> {
+// === Canvas Descrambling ===
+
+export async function descrambleBlob(blob: Blob, pattern: number[]): Promise<string> {
     const image = await blobToImage(blob);
 
     const scratch = document.createElement("canvas");
@@ -429,7 +445,9 @@ async function descrambleBlob(blob: Blob, pattern: number[]): Promise<string> {
     return output.toDataURL("image/png");
 }
 
-function inferGrid(length: number): { rows: number; cols: number } {
+// === Pure functions (grid, permutation, segments) ===
+
+export function inferGrid(length: number): { rows: number; cols: number } {
     if (length === TILES_PER_SIDE * TILES_PER_SIDE) {
         return { rows: TILES_PER_SIDE, cols: TILES_PER_SIDE };
     }
@@ -455,12 +473,12 @@ function inferGrid(length: number): { rows: number; cols: number } {
     return { rows: bestRows, cols: bestCols };
 }
 
-function derivePermutation(pattern: number[], rows: number, cols: number): number[] {
+export function derivePermutation(pattern: number[], rows: number, cols: number): number[] {
     const destTransposed = transposePattern(pattern, rows, cols);
     return destTransposed.map((value) => transposeIndex(value, rows, cols));
 }
 
-function transposePattern(pattern: number[], rows: number, cols: number): number[] {
+export function transposePattern(pattern: number[], rows: number, cols: number): number[] {
     const matrix: number[][] = [];
     for (let r = 0; r < rows; r++) {
         matrix.push(pattern.slice(r * cols, (r + 1) * cols));
@@ -476,15 +494,15 @@ function transposePattern(pattern: number[], rows: number, cols: number): number
     return result;
 }
 
-function transposeIndex(value: number, rows: number, cols: number): number {
+export function transposeIndex(value: number, rows: number, cols: number): number {
     const r = Math.floor(value / cols);
     const c = value % cols;
     return c * cols + r;
 }
 
-type Segment = { start: number; size: number };
+export type Segment = { start: number; size: number };
 
-function buildSegments(total: number, parts: number): Segment[] {
+export function buildSegments(total: number, parts: number): Segment[] {
     const segments: Segment[] = [];
     for (let i = 0; i < parts; i++) {
         const start = Math.floor((i * total) / parts);
@@ -494,7 +512,7 @@ function buildSegments(total: number, parts: number): Segment[] {
     return segments;
 }
 
-function getTileRect(index: number, columns: Segment[], rows: Segment[], cols: number) {
+export function getTileRect(index: number, columns: Segment[], rows: Segment[], cols: number) {
     const rowIndex = Math.floor(index / cols);
     const colIndex = index % cols;
     const col = columns[colIndex] ?? { start: 0, size: 0 };
@@ -502,7 +520,7 @@ function getTileRect(index: number, columns: Segment[], rows: Segment[], cols: n
     return { x: col.start, y: row.start, width: col.size, height: row.size };
 }
 
-async function blobToImage(blob: Blob): Promise<HTMLImageElement> {
+export async function blobToImage(blob: Blob): Promise<HTMLImageElement> {
     return new Promise((resolve, reject) => {
         const url = URL.createObjectURL(blob);
         const image = new Image();
@@ -518,5 +536,8 @@ async function blobToImage(blob: Blob): Promise<HTMLImageElement> {
     });
 }
 
-// === Main ===
+// === Auto-execute in browser context (extension IIFE or Puppeteer injection) ===
+// When imported as a module (e.g. CLI/tests), main() is NOT auto-called.
+// The IIFE build (build.ts) wraps this so main() runs automatically.
+// For Puppeteer injection via addScriptTag, the build output includes main().
 main();
